@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - Key Manager v32.1 (Patched)</title>
+    <title>SocialStudio AI - Integration Fix v32.2</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -410,7 +410,7 @@
                 genModeLabel: "Modalità Generazione",
                 singleGen: "Singola (Veloce)",
                 batchGen: "Batch (4 Varianti)",
-                promptImgLabel: "Prompt Generazione Immagine:",
+                promptImgLabel: "Image Generation Prompt (Esatto):",
                 promptTxtLabel: "Istruzioni Generazione Testo:"
             },
             en: {
@@ -463,7 +463,7 @@
                 genModeLabel: "Generation Mode",
                 singleGen: "Single (Fast)",
                 batchGen: "Batch (4 Variants)",
-                promptImgLabel: "Image Generation Prompt:",
+                promptImgLabel: "Image Generation Prompt (Exact):",
                 promptTxtLabel: "Text Generation Instructions:"
             }
         };
@@ -707,7 +707,7 @@
                 return new Blob([ab], { type: mimeString });
             };
             
-            // --- UPDATED MANUAL SHARE ---
+            // --- UPDATED MANUAL SHARE (CRITICAL FIX FOR ORGANIC INTEGRATION) ---
             const handleManualShare = async () => {
                 // 1. Construct Base Prompt
                 const contextPrompt = getPrompt(contextsList, contextStyle);
@@ -723,36 +723,50 @@
                     fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
                 }
 
-                // 2. Add High-Fidelity Image Instructions
-                let finalManualPrompt = `** GENERATE IMAGE **\n\nPROMPT: ${fullPrompt}`;
+                // 2. Add High-Fidelity Image Instructions (EXACTLY mimicking fetchImage logic by appending to text)
+                let textInstructions = "";
                 let indexCounter = 1;
                 const filesToShare = [];
+                const imageMetaData = [];
                 
                 if (productImg) {
-                    filesToShare.push(new File([dataURItoBlob(productImg)], "input_product.jpg", { type: productMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Use as structural reference for the product.`;
+                    filesToShare.push(new File([dataURItoBlob(productImg)], "image_1_product.jpg", { type: productMimeType || 'image/jpeg' }));
+                    textInstructions += ` Use Image ${indexCounter} as structural reference for the product.`;
+                    imageMetaData.push(`[Image ${indexCounter}]: Product Input`);
                     indexCounter++;
                 }
                 if (logoImg) {
-                    filesToShare.push(new File([dataURItoBlob(logoImg)], "input_logo.png", { type: logoMimeType || 'image/png' }));
+                    filesToShare.push(new File([dataURItoBlob(logoImg)], "image_2_logo.png", { type: logoMimeType || 'image/png' }));
                     const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Apply the logo/texture from this image onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
+                    textInstructions += ` Apply the logo from Image ${indexCounter} onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
+                    imageMetaData.push(`[Image ${indexCounter}]: Logo Input (applied to Image ${targetIdx})`);
                     indexCounter++;
                 }
                 if (personImg) {
-                    filesToShare.push(new File([dataURItoBlob(personImg)], "input_person.jpg", { type: personMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Include this person in the scene as the main subject interacting with the product.`;
+                    filesToShare.push(new File([dataURItoBlob(personImg)], "image_3_person.jpg", { type: personMimeType || 'image/jpeg' }));
+                    textInstructions += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
+                    imageMetaData.push(`[Image ${indexCounter}]: Person Input`);
                     indexCounter++;
                 }
 
-                // 3. Copy & Share Logic
-                await copyToClipboard(finalManualPrompt);
+                // 3. Final Prompt Construction for Sharing
+                // The crucial part: The text prompt the model sees is "PROMPT: " + fullPrompt + "." + textInstructions
+                const finalModelTextPrompt = `PROMPT: ${fullPrompt}.${textInstructions} TASK: Generate image matching the style and context.`;
+
+                let finalManualOutput = `** MULTIMODAL PROMPT STRUCTURE (Gemini Format) **\n\n`;
+                finalManualOutput += `--- TEXT PART (Copy this exactly) ---\n${finalModelTextPrompt}\n\n`;
+                if (imageMetaData.length > 0) {
+                     finalManualOutput += `--- IMAGE PARTS (Upload in order) ---\n${imageMetaData.join('\n')}`;
+                }
+
+                // 4. Copy & Share Logic
+                await copyToClipboard(finalManualOutput);
 
                 if (navigator.share) {
                     try {
                         const shareData = {
                             title: 'SocialStudio Prompt',
-                            text: finalManualPrompt
+                            text: finalManualOutput
                         };
                         if (filesToShare.length > 0 && navigator.canShare && navigator.canShare({ files: filesToShare })) {
                             shareData.files = filesToShare;
@@ -768,7 +782,7 @@
                 }
             };
             
-            // --- UPDATED DEBUG PROMPTS ---
+            // --- UPDATED DEBUG PROMPTS (CRITICAL FIX FOR ORGANIC INTEGRATION) ---
             const handleShowPrompts = () => {
                 // --- 1. REPLICATE TEXT PROMPT LOGIC ---
                 let tone = "";
@@ -822,7 +836,7 @@
                     ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
                 }
 
-                // --- 2. REPLICATE IMAGE PROMPT LOGIC (UPDATED) ---
+                // --- 2. REPLICATE IMAGE PROMPT LOGIC (EXACTLY mimicking fetchImage logic) ---
                 const contextPrompt = getPrompt(contextsList, contextStyle);
                 const mediumPrompt = getPrompt(mediumsList, mediumStyle);
                 
@@ -838,25 +852,29 @@
                     fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
                 }
                 
+                // Appending instructions directly to the text string
                 let imageInstructions = "";
                 let indexCounter = 1;
                 
                 if (productImg) { 
-                    imageInstructions += `\n[Image ${indexCounter}]: Use as structural reference for the product.`; 
+                    imageInstructions += ` Use Image ${indexCounter} as structural reference for the product.`; 
                     indexCounter++; 
                 }
                 if (logoImg) { 
                     const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
-                    imageInstructions += `\n[Image ${indexCounter}]: Apply the logo from this image onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
+                    imageInstructions += ` Apply the logo from Image ${indexCounter} onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
                     indexCounter++; 
                 }
                 if (personImg) { 
-                    imageInstructions += `\n[Image ${indexCounter}]: Include person from this image as main subject interacting with the product.`; 
+                    imageInstructions += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`; 
                     indexCounter++; 
                 }
 
+                // The final text prompt the model sees
+                const finalModelTextPrompt = `PROMPT: ${fullPrompt}.${imageInstructions} TASK: Generate image matching the style and context.`;
+
                 setDebugPrompts({
-                    image: fullPrompt + imageInstructions,
+                    image: finalModelTextPrompt,
                     text: systemPrompt
                 });
             };
@@ -1103,6 +1121,7 @@
                 
                 const requests = Array(count).fill(null).map(async () => {
                     try {
+                        // THE CRITICAL LOGIC: Text instructions are appended directly to the text part.
                         const parts = [{ text: `PROMPT: ${fullPrompt}. TASK: Generate image matching the style and context.` }];
                         // Dynamic Index Logic
                         let indexCounter = 1;
@@ -1225,7 +1244,7 @@
                         <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-wine-900 p-2.5 rounded-full shadow-md text-white"><Icons.Briefcase className="w-6 h-6" /></div>
-                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v32.0 (Key Manager)</p></div>
+                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v32.2 (Integration Fix)</p></div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setShowSettings(true)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Settings className="w-5 h-5" /></button>
@@ -1356,7 +1375,7 @@
                                                 <label className={`text-[10px] font-bold uppercase tracking-wider ${theme.subtext}`}>{t.promptImgLabel}</label>
                                                 <button onClick={() => copyToClipboard(debugPrompts.image)} className="text-[10px] underline hover:text-wine-500">{t.copyBtn}</button>
                                             </div>
-                                            <textarea readOnly rows={4} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.image} />
+                                            <textarea readOnly rows={6} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.image} />
                                         </div>
                                         <div className="space-y-1">
                                             <div className="flex justify-between items-center">
