@@ -5,17 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SocialStudio AI - Key Manager v32.0</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
 
     <style>
@@ -734,17 +730,18 @@
                 
                 if (productImg) {
                     filesToShare.push(new File([dataURItoBlob(productImg)], "input_product.jpg", { type: productMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Structural reference for the product.`;
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Use Image ${indexCounter} as structural reference for the product.`;
                     indexCounter++;
                 }
                 if (logoImg) {
                     filesToShare.push(new File([dataURItoBlob(logoImg)], "input_logo.png", { type: logoMimeType || 'image/png' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Logo/texture to apply.`;
+                    const targetIdx = productImg ? (indexCounter - 1) : "generated object";
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Apply the logo from Image ${indexCounter} onto the surface of ${productImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
                     indexCounter++;
                 }
                 if (personImg) {
                     filesToShare.push(new File([dataURItoBlob(personImg)], "input_person.jpg", { type: personMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Person to include as main subject.`;
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
                     indexCounter++;
                 }
 
@@ -847,13 +844,13 @@
                 
                 let imageInstructions = "";
                 let indexCounter = 1;
-                if (productImg) { imageInstructions += `\n[Image ${indexCounter}]: Use as structural reference for the product.`; indexCounter++; }
+                if (productImg) { imageInstructions += `\n[Image ${indexCounter}]: Use Image ${indexCounter} as structural reference for the product.`; indexCounter++; }
                 if (logoImg) { 
                     const targetIdx = productImg ? (indexCounter - 1) : "generated object";
-                    imageInstructions += `\n[Image ${indexCounter}]: Apply logo/texture onto surface of ${productImg ? `Image ${targetIdx}` : "the product"}.`; 
+                    imageInstructions += `\n[Image ${indexCounter}]: Apply the logo from Image ${indexCounter} onto the surface of ${productImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
                     indexCounter++; 
                 }
-                if (personImg) { imageInstructions += `\n[Image ${indexCounter}]: Include person as main subject.`; indexCounter++; }
+                if (personImg) { imageInstructions += `\n[Image ${indexCounter}]: Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`; indexCounter++; }
 
                 setDebugPrompts({
                     image: fullPrompt + imageInstructions,
