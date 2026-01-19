@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - Integration Fix v32.2</title>
+    <title>SocialStudio AI - Fidelity Edition v33.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -27,8 +27,6 @@
         .fade-in { animation: fadeIn 0.5s ease-in; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .selected-ring { ring-width: 4px; ring-color: #9f1239; border-color: transparent; }
-        
         /* Shimmer effect for loading */
         .shimmer {
             background: #f6f7f8;
@@ -111,7 +109,7 @@
             Settings: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />
         };
 
-        // --- CONTEXT LIST (THE SETTING/SUBJECT) ---
+        // --- CONTEXT LIST ---
         const contextsList = [
              { group: '🔳 Studio & Product Focus', options: [
                 { id: 'pure_white', emoji: '⬜', label: 'Pure White', prompt: '{{SUBJECT}} centered on a seamless pure white background, soft studio lighting, faint shadow, e-commerce style, no other objects.' },
@@ -242,7 +240,7 @@
             ]}
         ];
 
-        // --- RESTORED MEDIUMS (THE HOW) ---
+        // --- MEDIUMS LIST ---
         const mediumsList = [
             { group: '📸 Photography Styles', options: [
                 { id: 'photorealistic', emoji: '📷', label: 'Photorealistic', prompt: 'High-resolution professional photography, 8k, realistic textures, balanced lighting, sharp focus.' },
@@ -410,7 +408,7 @@
                 genModeLabel: "Modalità Generazione",
                 singleGen: "Singola (Veloce)",
                 batchGen: "Batch (4 Varianti)",
-                promptImgLabel: "Image Generation Prompt (Esatto):",
+                promptImgLabel: "Universal Image Generation Prompt (Fidelity Mode):",
                 promptTxtLabel: "Istruzioni Generazione Testo:"
             },
             en: {
@@ -463,7 +461,7 @@
                 genModeLabel: "Generation Mode",
                 singleGen: "Single (Fast)",
                 batchGen: "Batch (4 Variants)",
-                promptImgLabel: "Image Generation Prompt (Exact):",
+                promptImgLabel: "Universal Image Generation Prompt (Fidelity Mode):",
                 promptTxtLabel: "Text Generation Instructions:"
             }
         };
@@ -707,7 +705,7 @@
                 return new Blob([ab], { type: mimeString });
             };
             
-            // --- UPDATED MANUAL SHARE (CRITICAL FIX FOR ORGANIC INTEGRATION) ---
+            // --- UPDATED MANUAL SHARE (GENERIC + FIDELITY OPTIMIZED) ---
             const handleManualShare = async () => {
                 // 1. Construct Base Prompt
                 const contextPrompt = getPrompt(contextsList, contextStyle);
@@ -716,57 +714,45 @@
                 if (subject.length > 50) subject = "the product described";
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
-                let fullPrompt = "";
-                if (platform === 'meme') {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
-                } else {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
-                }
-
-                // 2. Add High-Fidelity Image Instructions (EXACTLY mimicking fetchImage logic by appending to text)
-                let textInstructions = "";
-                let indexCounter = 1;
-                const filesToShare = [];
-                const imageMetaData = [];
+                // 2. Build the Model-Agnostic Prompt Structure
+                let fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
+                fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
+                fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
+                fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
                 
+                fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
+                fullPrompt += `- The product must be PHYSICALLY GROUNDED in the scene. NO floating overlays.\n`;
+                fullPrompt += `- Match lighting, shadows, and reflections of the environment perfectly.\n`;
+                fullPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images.\n\n`;
+
+                const filesToShare = [];
+                let referenceCount = 1;
+
                 if (productImg) {
-                    filesToShare.push(new File([dataURItoBlob(productImg)], "image_1_product.jpg", { type: productMimeType || 'image/jpeg' }));
-                    textInstructions += ` Use Image ${indexCounter} as structural reference for the product.`;
-                    imageMetaData.push(`[Image ${indexCounter}]: Product Input`);
-                    indexCounter++;
+                    filesToShare.push(new File([dataURItoBlob(productImg)], "ref_1_product.jpg", { type: productMimeType || 'image/jpeg' }));
+                    fullPrompt += `[REFERENCE ${referenceCount} - STRUCTURE]: Use this image as the SOURCE OF TRUTH for the product's shape and form.\n`;
+                    referenceCount++;
                 }
                 if (logoImg) {
-                    filesToShare.push(new File([dataURItoBlob(logoImg)], "image_2_logo.png", { type: logoMimeType || 'image/png' }));
-                    const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
-                    textInstructions += ` Apply the logo from Image ${indexCounter} onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
-                    imageMetaData.push(`[Image ${indexCounter}]: Logo Input (applied to Image ${targetIdx})`);
-                    indexCounter++;
+                    filesToShare.push(new File([dataURItoBlob(logoImg)], "ref_2_logo.png", { type: logoMimeType || 'image/png' }));
+                    fullPrompt += `[REFERENCE ${referenceCount} - TEXTURE/LABEL]: Apply this logo/label onto the product surface. MUST BE LEGIBLE and undistorted.\n`;
+                    referenceCount++;
                 }
                 if (personImg) {
-                    filesToShare.push(new File([dataURItoBlob(personImg)], "image_3_person.jpg", { type: personMimeType || 'image/jpeg' }));
-                    textInstructions += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
-                    imageMetaData.push(`[Image ${indexCounter}]: Person Input`);
-                    indexCounter++;
+                    filesToShare.push(new File([dataURItoBlob(personImg)], "ref_3_actor.jpg", { type: personMimeType || 'image/jpeg' }));
+                    fullPrompt += `[REFERENCE ${referenceCount} - ACTOR]: Include this person interacting organically with the product.\n`;
+                    referenceCount++;
                 }
 
-                // 3. Final Prompt Construction for Sharing
-                // The crucial part: The text prompt the model sees is "PROMPT: " + fullPrompt + "." + textInstructions
-                const finalModelTextPrompt = `PROMPT: ${fullPrompt}.${textInstructions} TASK: Generate image matching the style and context.`;
-
-                let finalManualOutput = `** MULTIMODAL PROMPT STRUCTURE (Gemini Format) **\n\n`;
-                finalManualOutput += `--- TEXT PART (Copy this exactly) ---\n${finalModelTextPrompt}\n\n`;
-                if (imageMetaData.length > 0) {
-                     finalManualOutput += `--- IMAGE PARTS (Upload in order) ---\n${imageMetaData.join('\n')}`;
-                }
-
-                // 4. Copy & Share Logic
-                await copyToClipboard(finalManualOutput);
+                // 3. Copy & Share Logic
+                await copyToClipboard(fullPrompt);
 
                 if (navigator.share) {
                     try {
                         const shareData = {
                             title: 'SocialStudio Prompt',
-                            text: finalManualOutput
+                            text: fullPrompt
                         };
                         if (filesToShare.length > 0 && navigator.canShare && navigator.canShare({ files: filesToShare })) {
                             shareData.files = filesToShare;
@@ -782,9 +768,9 @@
                 }
             };
             
-            // --- UPDATED DEBUG PROMPTS (CRITICAL FIX FOR ORGANIC INTEGRATION) ---
+            // --- UPDATED DEBUG PROMPTS (MATCHING GENERIC FORMAT) ---
             const handleShowPrompts = () => {
-                // --- 1. REPLICATE TEXT PROMPT LOGIC ---
+                // --- 1. TEXT PROMPT LOGIC (Unchanged) ---
                 let tone = "";
                 if (techLevel > 70) tone += " Technical/Specific."; else tone += " Simple/Accessible.";
                 
@@ -792,7 +778,6 @@
                 const mediumObj = mediumsList.flatMap(g => g.options).find(o => o.id === mediumStyle);
                 const mediumLabel = mediumObj?.label || "Standard";
                 const mediumGroup = mediumsList.find(g => g.options.some(o => o.id === mediumStyle))?.group || "";
-                
                 const contextGroup = contextsList.find(g => g.options.some(o => o.id === contextStyle))?.group || "";
                 const isStudio = contextGroup.includes('Studio');
                 const isRealism = mediumGroup.includes('Photography') || mediumGroup.includes('Editorial');
@@ -800,81 +785,43 @@
                 let systemPrompt = "";
                 if (platform === 'meme') {
                     const memeStyle = memeType === 'sarcastic' ? "SARCASTIC, IRONIC, RELATABLE (Viral Humor)" : "PROMOTIONAL, MARKETING, SALES (Call to Action)";
-                    systemPrompt = `You are a MEME creator. Style: ${memeStyle}.
-                    1. Write a short, punchy phrase (max 10-12 words) for the image overlay.
-                    2. Write 10 relevant hashtags.
-                    The text MUST relate to: Product "${prompt}".
-                    Context Details: "${contextDetails}".
-                    Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.
-                    Topic: "${prompt}". Language Output: ${lang === 'en' ? 'English' : 'Italian'}.`;
+                    systemPrompt = `You are a MEME creator. Style: ${memeStyle}. Topic: "${prompt}". Context: "${contextDetails}". Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.`;
                 } else {
                     const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
                     let creativeInstruction = "";
                     if (isRealism) {
-                        if (isStudio) {
-                             creativeInstruction = `Focus purely on the product '${prompt}' and its premium features. Write high-conversion marketing copy. Do not describe the background. Context Details: ${contextDetails}`;
-                        } else {
-                             creativeInstruction = `Focus on the product '${prompt}' and the lifestyle setting (${contextLabel}). Incorporate details: ${contextDetails}. Write high-conversion marketing copy.`;
-                        }
+                        creativeInstruction = isStudio ? `Focus purely on product '${prompt}'.` : `Focus on product '${prompt}' in ${contextLabel} setting.`;
                     } else {
-                         if (isStudio) {
-                             creativeInstruction = `Creatively merge the concept of the Product '${prompt}' and the ${mediumLabel} art style. Ignore the background setting.`;
-                        } else {
-                             creativeInstruction = `Creatively merge the concept of the Product '${prompt}', the ${contextLabel} setting, AND the ${mediumLabel} art style. Incorporate details: ${contextDetails}.`;
-                        }
+                        creativeInstruction = `Merge '${prompt}' with ${mediumLabel} art style.`;
                     }
-
-                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${prompt}".
-                    ${creativeInstruction}
-                    Tone: ${tone}.
-                    Return a JSON object with exactly these keys:
-                    {
-                        "instagram": "Engaging caption with emojis and hashtags",
-                        "linkedin": "Professional, industry-focused post",
-                        "story": "Short punchy text for Instagram Story (max 15 words)"
-                    }
-                    ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
+                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for: "${prompt}". ${creativeInstruction}. Tone: ${tone}. Return JSON: { "instagram": "...", "linkedin": "...", "story": "..." }. ${langInstruction} NO MARKDOWN.`;
                 }
 
-                // --- 2. REPLICATE IMAGE PROMPT LOGIC (EXACTLY mimicking fetchImage logic) ---
+                // --- 2. IMAGE PROMPT LOGIC (GENERIC / FIDELITY FOCUSED) ---
                 const contextPrompt = getPrompt(contextsList, contextStyle);
                 const mediumPrompt = getPrompt(mediumsList, mediumStyle);
                 
                 let subject = customDetails.trim() || prompt.trim() || "product";
                 if (subject.length > 50) subject = "the product described";
-
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
-                let fullPrompt = "";
-                if (platform === 'meme') {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
-                } else {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
-                }
+                let fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
+                fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
+                fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
+                fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
                 
-                // Appending instructions directly to the text string
-                let imageInstructions = "";
-                let indexCounter = 1;
-                
-                if (productImg) { 
-                    imageInstructions += ` Use Image ${indexCounter} as structural reference for the product.`; 
-                    indexCounter++; 
-                }
-                if (logoImg) { 
-                    const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
-                    imageInstructions += ` Apply the logo from Image ${indexCounter} onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
-                    indexCounter++; 
-                }
-                if (personImg) { 
-                    imageInstructions += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`; 
-                    indexCounter++; 
-                }
+                fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
+                fullPrompt += `- The product must be PHYSICALLY GROUNDED in the scene. NO floating overlays.\n`;
+                fullPrompt += `- Match lighting, shadows, and reflections of the environment perfectly.\n`;
+                fullPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images.\n\n`;
 
-                // The final text prompt the model sees
-                const finalModelTextPrompt = `PROMPT: ${fullPrompt}.${imageInstructions} TASK: Generate image matching the style and context.`;
+                if (productImg) fullPrompt += `[REFERENCE 1 - STRUCTURE]: Use this image as the SOURCE OF TRUTH for the product's shape.\n`;
+                if (logoImg) fullPrompt += `[REFERENCE 2 - LABEL]: Apply this label onto the product. MUST BE LEGIBLE.\n`;
+                if (personImg) fullPrompt += `[REFERENCE 3 - ACTOR]: Include this person interacting organically.\n`;
 
                 setDebugPrompts({
-                    image: finalModelTextPrompt,
+                    image: fullPrompt,
                     text: systemPrompt
                 });
             };
@@ -947,26 +894,21 @@
 
             const fetchCopyAndMeme = async (topic, ctxId, medId, ctxDetails) => {
                 const currentApiKey = getApiKey();
-                // We let generateContent handle the alert for missing key, 
-                // but this function needs it for fetch.
                 if (!currentApiKey) return { copy: "API Key missing", memeText: "Error" };
 
                 let tone = "";
                 if (techLevel > 70) tone += " Technical/Specific."; else tone += " Simple/Accessible.";
                 
-                // CONTEXT FUSION LOGIC
                 const contextLabel = contextsList.flatMap(g => g.options).find(o => o.id === ctxId)?.label || "General";
                 const mediumObj = mediumsList.flatMap(g => g.options).find(o => o.id === medId);
                 const mediumLabel = mediumObj?.label || "Standard";
                 const mediumGroup = mediumsList.find(g => g.options.some(o => o.id === medId))?.group || "";
-                
                 const contextGroup = contextsList.find(g => g.options.some(o => o.id === ctxId))?.group || "";
                 const isStudio = contextGroup.includes('Studio');
                 const isRealism = mediumGroup.includes('Photography') || mediumGroup.includes('Editorial');
 
                 let systemPrompt = "";
                 if (platform === 'meme') {
-                    // MEME LOGIC
                     const memeStyle = memeType === 'sarcastic' ? "SARCASTIC, IRONIC, RELATABLE (Viral Humor)" : "PROMOTIONAL, MARKETING, SALES (Call to Action)";
                     systemPrompt = `You are a MEME creator. Style: ${memeStyle}.
                     1. Write a short, punchy phrase (max 10-12 words) for the image overlay.
@@ -976,33 +918,18 @@
                     Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.
                     Topic: "${topic}". Language Output: ${lang === 'en' ? 'English' : 'Italian'}.`;
                 } else {
-                    // BUNDLE LOGIC
                     const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
-                    
                     let creativeInstruction = "";
                     if (isRealism) {
-                        if (isStudio) {
-                             creativeInstruction = `Focus purely on the product '${topic}' and its premium features. Write high-conversion marketing copy. Do not describe the background. Context Details: ${ctxDetails}`;
-                        } else {
-                             creativeInstruction = `Focus on the product '${topic}' and the lifestyle setting (${contextLabel}). Incorporate details: ${ctxDetails}. Write high-conversion marketing copy.`;
-                        }
+                        creativeInstruction = isStudio ? `Focus purely on the product '${topic}' features. Write high-conversion marketing copy.` : `Focus on the product '${topic}' and the lifestyle setting (${contextLabel}). Incorporate details: ${ctxDetails}.`;
                     } else {
-                         if (isStudio) {
-                             creativeInstruction = `Creatively merge the concept of the Product '${topic}' and the ${mediumLabel} art style. Ignore the background setting.`;
-                        } else {
-                             creativeInstruction = `Creatively merge the concept of the Product '${topic}', the ${contextLabel} setting, AND the ${mediumLabel} art style. Incorporate details: ${ctxDetails}.`;
-                        }
+                        creativeInstruction = `Merge the concept of '${topic}' and the ${mediumLabel} art style.`;
                     }
-
                     systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${topic}".
                     ${creativeInstruction}
                     Tone: ${tone}.
                     Return a JSON object with exactly these keys:
-                    {
-                        "instagram": "Engaging caption with emojis and hashtags",
-                        "linkedin": "Professional, industry-focused post",
-                        "story": "Short punchy text for Instagram Story (max 15 words)"
-                    }
+                    { "instagram": "...", "linkedin": "...", "story": "..." }
                     ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
                 }
 
@@ -1040,38 +967,21 @@
             
             const handleRegenerateText = async () => {
                 const currentApiKey = getApiKey();
-                if (!currentApiKey) {
-                    setShowSettings(true);
-                    return;
-                }
+                if (!currentApiKey) { setShowSettings(true); return; }
                 if (!prompt.trim()) return;
                 setTextLoading(true);
                 try {
                     const textData = await fetchCopyAndMeme(prompt, contextStyle, mediumStyle, contextDetails);
-                    if (textData.isBundle) {
-                        setTextOptions(textData.textOptions);
-                        setCopy(null);
-                    } else {
-                        setTextOptions(null);
-                        setCopy(textData.copy);
-                    }
+                    if (textData.isBundle) { setTextOptions(textData.textOptions); setCopy(null); } 
+                    else { setTextOptions(null); setCopy(textData.copy); }
                     setMemeText(textData.memeText); 
-                } catch (e) {
-                    console.error("Text regeneration failed", e);
-                } finally {
-                    setTextLoading(false);
-                }
+                } catch (e) { console.error("Text regeneration failed", e); } finally { setTextLoading(false); }
             };
 
             async function analyzeImageForPrompt(base64Data, mimeType, type) {
                 const currentApiKey = getApiKey();
                 if (!currentApiKey) return null;
-
-                let instruction = "";
-                if (type === 'product') instruction = "Describe this product's shape, material, and color visually in 30 English words. Start with 'A product shaped like...'.";
-                else if (type === 'logo') instruction = "Describe this logo/label visually (colors, text, style) in 20 English words.";
-                else if (type === 'person') instruction = "Describe this person visually (age, gender, hair, expression) in 20 English words. Start with 'A [description] person...'.";
-
+                const instruction = `Describe this ${type} visually in 25 words.`;
                 try {
                     const response = await fetchWithBackoff(
                         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`,
@@ -1087,7 +997,6 @@
             async function callImagen(modelName, prompt, count) {
                  const currentApiKey = getApiKey();
                  if (!currentApiKey) return null;
-
                  const response = await fetchWithBackoff(
                     `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${currentApiKey}`,
                     {
@@ -1101,46 +1010,27 @@
 
             const fetchImage = async (userPrompt, ctxId, medId, pImg, pType, lImg, lType, persImg, persType, details, ctxDetails, count) => {
                 const currentApiKey = getApiKey();
-                // Main generateContent handles validation, this just needs key
                 if (!currentApiKey) throw new Error("API Key missing");
 
                 const contextPrompt = getPrompt(contextsList, ctxId);
                 const mediumPrompt = getPrompt(mediumsList, medId);
-                
                 let subject = customDetails.trim() || userPrompt.trim() || "product";
                 if (subject.length > 50) subject = "the product described";
-
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
                 let fullPrompt = "";
-                if (platform === 'meme') {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${ctxDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
-                } else {
-                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${ctxDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
-                }
+                if (platform === 'meme') fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. COMPOSITION: Center weighted.`;
+                else fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. QUALITY: 8k.`;
                 
+                // Add organic keyword to internal generation too
+                fullPrompt += " REQUIREMENT: The product must be ORGANICALLY EMBEDDED into the scene. Match lighting and shadows. No floating.";
+
                 const requests = Array(count).fill(null).map(async () => {
                     try {
-                        // THE CRITICAL LOGIC: Text instructions are appended directly to the text part.
-                        const parts = [{ text: `PROMPT: ${fullPrompt}. TASK: Generate image matching the style and context.` }];
-                        // Dynamic Index Logic
-                        let indexCounter = 1;
-                        if (pImg) {
-                            parts.push({ inlineData: { mimeType: pType || 'image/png', data: pImg.split(',')[1] } });
-                            parts[0].text += ` Use Image ${indexCounter} as structural reference for the product.`;
-                            indexCounter++;
-                        }
-                        if (lImg) {
-                            parts.push({ inlineData: { mimeType: lType || 'image/png', data: lImg.split(',')[1] } });
-                            const targetIdx = pImg ? (indexCounter - 1) : "generated object";
-                            parts[0].text += ` Apply the logo from Image ${indexCounter} onto the surface of ${pImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
-                            indexCounter++;
-                        }
-                        if (persImg) {
-                            parts.push({ inlineData: { mimeType: persType || 'image/png', data: persImg.split(',')[1] } });
-                            parts[0].text += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
-                            indexCounter++;
-                        }
+                        const parts = [{ text: `PROMPT: ${fullPrompt}` }];
+                        if (pImg) parts.push({ inlineData: { mimeType: pType || 'image/png', data: pImg.split(',')[1] } });
+                        if (lImg) parts.push({ inlineData: { mimeType: lType || 'image/png', data: lImg.split(',')[1] } });
+                        if (persImg) parts.push({ inlineData: { mimeType: persType || 'image/png', data: persImg.split(',')[1] } });
 
                         const data = await fetchWithBackoff(
                             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`,
@@ -1165,7 +1055,6 @@
                 if (pImg) { const pDesc = await analyzeImageForPrompt(pImg.split(',')[1], pType, 'product'); if (pDesc) fallbackPrompt += ` SHAPE: ${pDesc}.`; }
                 if (lImg) { const lDesc = await analyzeImageForPrompt(lImg.split(',')[1], lType, 'logo'); if (lDesc) fallbackPrompt += ` LOGO: ${lDesc}.`; }
                 if (persImg) { const persDesc = await analyzeImageForPrompt(persImg.split(',')[1], persType, 'person'); if (persDesc) fallbackPrompt += ` PERSON: ${persDesc}.`; }
-                
                 if(pImg || lImg || persImg) warning = t.warnEdit;
 
                 try { 
@@ -1182,11 +1071,7 @@
 
             const generateContent = async () => {
                 const currentApiKey = getApiKey();
-                if (!currentApiKey) {
-                    setShowSettings(true);
-                    setToast({ message: t.apiKeyMissing, type: 'error' });
-                    return;
-                }
+                if (!currentApiKey) { setShowSettings(true); setToast({ message: t.apiKeyMissing, type: 'error' }); return; }
                 if (!prompt.trim()) return;
                 setLoading(true); setError(null); setWarningMsg(null); setImages([]); setFinalMemeImage(null);
                 
@@ -1197,14 +1082,8 @@
                         fetchImage(prompt, contextStyle, mediumStyle, productImg, productMimeType, logoImg, logoMimeType, personImg, personMimeType, customDetails, contextDetails, batchSize)
                     ]);
                     
-                    if (textData.isBundle) {
-                        setTextOptions(textData.textOptions);
-                        setCopy(null);
-                    } else {
-                        setTextOptions(null);
-                        setCopy(textData.copy);
-                    }
-                    
+                    if (textData.isBundle) { setTextOptions(textData.textOptions); setCopy(null); } 
+                    else { setTextOptions(null); setCopy(textData.copy); }
                     setMemeText(textData.memeText); 
                     if (imgResult && imgResult.images) { setImages(imgResult.images); setWarningMsg(imgResult.warning); }
                     setSelectedImageIndex(0);
@@ -1215,7 +1094,6 @@
             const handleShare = async () => {
                 const imageToShare = (platform === 'meme' && finalMemeImage) ? finalMemeImage : images[selectedImageIndex];
                 const textToShare = textOptions ? textOptions[activeTab] : copy;
-
                 if (!imageToShare) return;
                 try {
                     const blob = dataURItoBlob(imageToShare);
@@ -1236,7 +1114,6 @@
             return (
                 <div className={`min-h-screen font-serif transition-colors duration-300 ${theme.bg} ${theme.text}`}>
                     <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-                    
                     {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                     <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} t={t} onSave={handleSaveSettings} />
 
@@ -1244,7 +1121,7 @@
                         <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-wine-900 p-2.5 rounded-full shadow-md text-white"><Icons.Briefcase className="w-6 h-6" /></div>
-                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v32.2 (Integration Fix)</p></div>
+                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v33.0 (Fidelity)</p></div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setShowSettings(true)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Settings className="w-5 h-5" /></button>
@@ -1270,7 +1147,6 @@
                                     <textarea rows={1} className={`w-full px-5 py-3 rounded-2xl border focus:ring-0 outline-none transition-all resize-none text-base ${theme.inputBg} ${darkMode ? 'border-stone-600 focus:border-wine-500' : 'border-stone-200 focus:border-wine-800'} placeholder-stone-400`} placeholder={t.ctxDetailsPlaceholder} value={contextDetails} onChange={(e) => setContextDetails(e.target.value)} />
                                 </div>
                                 
-                                {/* PLATFORM SELECTOR - SIMPLIFIED */}
                                 <div className="space-y-2">
                                     <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}>{t.platformLabel}</label>
                                     <div className="grid grid-cols-2 gap-2">
@@ -1298,7 +1174,6 @@
                                     </div>
                                 )}
 
-                                {/* STYLE MATRIX SELECTORS */}
                                 <div className="grid md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}> {t.contextLabel} </label>
@@ -1320,7 +1195,6 @@
                                     </div>
                                 </div>
                                 
-                                {/* VARIANT COUNT */}
                                 <div className="space-y-2 pt-2 border-t border-stone-800">
                                    <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}>{t.genModeLabel}</label>
                                    <div className="flex gap-2">
@@ -1329,7 +1203,6 @@
                                    </div>
                                 </div>
 
-                                {/* TRI-ASSET UPLOAD */}
                                 <div className={`pt-4 border-t ${darkMode ? 'border-stone-700' : 'border-wine-50'}`}>
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="space-y-2">
@@ -1424,7 +1297,6 @@
                                     )}
                                 </div>
                                 
-                                {/* COPY SECTION (TABBED OR SINGLE) */}
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center">
                                         <h3 className={`text-lg font-bold font-sans ${darkMode ? 'text-white' : 'text-wine-900'}`}> {platform === 'meme' ? 'Hashtags Social' : t.copyTitle} </h3>
