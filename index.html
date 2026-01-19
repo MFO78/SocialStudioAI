@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - Fidelity Edition v33.0</title>
+    <title>SocialStudio AI - Fidelity Repair v33.1</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -82,7 +82,7 @@
             Wine: (props) => <Icon {...props} path={<><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></>} />,
             Moon: (props) => <Icon {...props} path={<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>} />,
             Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>} />,
-            Sparkles: (props) => <Icon {...props} path={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M2 7h6"/></>} />,
+            Sparkles: (props) => <Icon {...props} path={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M2 7h6"/></>} />,
             Wand2: (props) => <Icon {...props} path={<><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H5"/><path d="M21 12h-2"/><path d="m8 8 5 5"/></>} />,
             Upload: (props) => <Icon {...props} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></>} />,
             X: (props) => <Icon {...props} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
@@ -705,7 +705,7 @@
                 return new Blob([ab], { type: mimeString });
             };
             
-            // --- UPDATED MANUAL SHARE (GENERIC + FIDELITY OPTIMIZED) ---
+            // --- UPDATED MANUAL SHARE (HYBRID: GENERIC FORMAT + SPECIFIC ROLES) ---
             const handleManualShare = async () => {
                 // 1. Construct Base Prompt
                 const contextPrompt = getPrompt(contextsList, contextStyle);
@@ -714,7 +714,7 @@
                 if (subject.length > 50) subject = "the product described";
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
-                // 2. Build the Model-Agnostic Prompt Structure
+                // 2. Build the Model-Agnostic Prompt Structure (Universal Format)
                 let fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
                 fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
                 fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
@@ -768,7 +768,7 @@
                 }
             };
             
-            // --- UPDATED DEBUG PROMPTS (MATCHING GENERIC FORMAT) ---
+            // --- UPDATED DEBUG PROMPTS ---
             const handleShowPrompts = () => {
                 // --- 1. TEXT PROMPT LOGIC (Unchanged) ---
                 let tone = "";
@@ -790,11 +790,16 @@
                     const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
                     let creativeInstruction = "";
                     if (isRealism) {
-                        creativeInstruction = isStudio ? `Focus purely on product '${prompt}'.` : `Focus on product '${prompt}' in ${contextLabel} setting.`;
+                        creativeInstruction = isStudio ? `Focus purely on the product '${prompt}' features. Write high-conversion marketing copy.` : `Focus on the product '${prompt}' and the lifestyle setting (${contextLabel}). Incorporate details: ${ctxDetails}.`;
                     } else {
-                        creativeInstruction = `Merge '${prompt}' with ${mediumLabel} art style.`;
+                        creativeInstruction = `Merge the concept of '${prompt}' and the ${mediumLabel} art style.`;
                     }
-                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for: "${prompt}". ${creativeInstruction}. Tone: ${tone}. Return JSON: { "instagram": "...", "linkedin": "...", "story": "..." }. ${langInstruction} NO MARKDOWN.`;
+                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${prompt}".
+                    ${creativeInstruction}
+                    Tone: ${tone}.
+                    Return a JSON object with exactly these keys:
+                    { "instagram": "...", "linkedin": "...", "story": "..." }
+                    ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
                 }
 
                 // --- 2. IMAGE PROMPT LOGIC (GENERIC / FIDELITY FOCUSED) ---
@@ -1008,6 +1013,7 @@
                 return null;
             }
 
+            // --- CRITICAL FIX: RESTORED EXPLICIT INDEX REFERENCING FOR INTERNAL API ---
             const fetchImage = async (userPrompt, ctxId, medId, pImg, pType, lImg, lType, persImg, persType, details, ctxDetails, count) => {
                 const currentApiKey = getApiKey();
                 if (!currentApiKey) throw new Error("API Key missing");
@@ -1022,15 +1028,31 @@
                 if (platform === 'meme') fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. COMPOSITION: Center weighted.`;
                 else fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. QUALITY: 8k.`;
                 
-                // Add organic keyword to internal generation too
+                // Add organic keyword to internal generation
                 fullPrompt += " REQUIREMENT: The product must be ORGANICALLY EMBEDDED into the scene. Match lighting and shadows. No floating.";
 
                 const requests = Array(count).fill(null).map(async () => {
                     try {
                         const parts = [{ text: `PROMPT: ${fullPrompt}` }];
-                        if (pImg) parts.push({ inlineData: { mimeType: pType || 'image/png', data: pImg.split(',')[1] } });
-                        if (lImg) parts.push({ inlineData: { mimeType: lType || 'image/png', data: lImg.split(',')[1] } });
-                        if (persImg) parts.push({ inlineData: { mimeType: persType || 'image/png', data: persImg.split(',')[1] } });
+                        
+                        // RESTORED EXPLICIT INDEXING LOGIC
+                        let indexCounter = 1;
+                        if (pImg) {
+                            parts.push({ inlineData: { mimeType: pType || 'image/png', data: pImg.split(',')[1] } });
+                            parts[0].text += ` [Image ${indexCounter}]: STRUCTURAL REFERENCE. Use this image as the SOURCE OF TRUTH for the product's shape and form.`;
+                            indexCounter++;
+                        }
+                        if (lImg) {
+                            parts.push({ inlineData: { mimeType: lType || 'image/png', data: lImg.split(',')[1] } });
+                            const targetIdx = pImg ? (indexCounter - 1) : "the generated object";
+                            parts[0].text += ` [Image ${indexCounter}]: TEXTURE/LABEL. Apply this logo/label onto the surface of [Image ${targetIdx}]. MUST BE LEGIBLE.`;
+                            indexCounter++;
+                        }
+                        if (persImg) {
+                            parts.push({ inlineData: { mimeType: persType || 'image/png', data: persImg.split(',')[1] } });
+                            parts[0].text += ` [Image ${indexCounter}]: ACTOR REFERENCE. Include this person interacting organically in the scene.`;
+                            indexCounter++;
+                        }
 
                         const data = await fetchWithBackoff(
                             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`,
@@ -1121,7 +1143,7 @@
                         <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-wine-900 p-2.5 rounded-full shadow-md text-white"><Icons.Briefcase className="w-6 h-6" /></div>
-                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v33.0 (Fidelity)</p></div>
+                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v33.1 (Fidelity Fix)</p></div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setShowSettings(true)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Settings className="w-5 h-5" /></button>
