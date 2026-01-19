@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialStudio AI - API Guard v31.1</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;700;900&family=Oswald:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, .serif { font-family: 'Playfair Display', serif; }
+        .meme-font { font-family: 'Oswald', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #881337; border-radius: 4px; }
+        
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .selected-ring { ring-width: 4px; ring-color: #9f1239; border-color: transparent; }
+        
+        /* Shimmer effect for loading */
+        .shimmer {
+            background: #f6f7f8;
+            background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-repeat: no-repeat;
+            background-size: 800px 100%; 
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards; 
+            animation-iteration-count: infinite;
+            animation-name: placeholderShimmer;
+            animation-timing-function: linear;
+        }
+        @keyframes placeholderShimmer {
+            0% { background-position: -468px 0; }
+            100% { background-position: 468px 0; }
+        }
+    </style>
+
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            wine: {
+                                50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af',
+                                400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c',
+                                800: '#9f1239', 900: '#881337', 950: '#4c0519',
+                            },
+                            stone: { 850: '#1c1917', 900: '#0c0a09' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="transition-colors duration-300">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const Icon = ({ path, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            Wine: (props) => <Icon {...props} path={<><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></>} />,
+            Moon: (props) => <Icon {...props} path={<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>} />,
+            Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></>} />,
+            Sparkles: (props) => <Icon {...props} path={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275-1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M2 7h6"/></>} />,
+            Wand2: (props) => <Icon {...props} path={<><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H5"/><path d="M21 12h-2"/><path d="m8 8 5 5"/></>} />,
+            Upload: (props) => <Icon {...props} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></>} />,
+            X: (props) => <Icon {...props} path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />,
+            Download: (props) => <Icon {...props} path={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>} />,
+            Share2: (props) => <Icon {...props} path={<><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></>} />,
+            RefreshCw: (props) => <Icon {...props} path={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>} />,
+            Droplets: (props) => <Icon {...props} path={<><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></>} />,
+            Instagram: (props) => <Icon {...props} path={<><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></>} />,
+            Linkedin: (props) => <Icon {...props} path={<><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></>} />,
+            MemeFace: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></>} />,
+            PenTool: (props) => <Icon {...props} path={<><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></>} />,
+            AlertTriangle: (props) => <Icon {...props} path={<><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>} />,
+            Globe: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></>} />,
+            Briefcase: (props) => <Icon {...props} path={<><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></>} />,
+            Box: (props) => <Icon {...props} path={<><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></>} />,
+            Tag: (props) => <Icon {...props} path={<><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94 .94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></>} />,
+            User: (props) => <Icon {...props} path={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
+            Palette: (props) => <Icon {...props} path={<><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></>} />,
+            Copy: (props) => <Icon {...props} path={<><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>} />,
+            Layout: (props) => <Icon {...props} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></>} />,
+            Layers: (props) => <Icon {...props} path={<><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>} />,
+            Send: (props) => <Icon {...props} path={<><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>} />,
+            Code: (props) => <Icon {...props} path={<><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>} />
+        };
+
+        // --- API & CONSTANTS ---
+        const apiKey = ""; 
+        
+        // --- RESTORED CONTEXTS (WHERE / WHAT) ---
+        const contextsList = [
+             { group: '🔳 Studio & Product Focus', options: [
+                { id: 'pure_white', emoji: '⬜', label: 'Pure White', prompt: '{{SUBJECT}} centered on a seamless pure white background, soft studio lighting, faint shadow, e-commerce style, no other objects.' },
+                { id: 'pure_black', emoji: '⬛', label: 'Pure Black', prompt: '{{SUBJECT}} centered on a seamless pitch black background, dramatic rim lighting, elegant reflection, premium style, minimalist.' },
+                { id: 'product_podium', emoji: '🏆', label: 'Podium', prompt: '{{SUBJECT}} placed on a geometric podium, pastel colors background, soft shadows, minimalist set design, no people.' },
+                { id: 'photo_studio', emoji: '📸', label: 'Photo Studio', prompt: 'Wide shot of a professional photo studio, umbrella lights visible, infinity curve, {{SUBJECT}} ready for shooting.' },
+                { id: 'desk_setup', emoji: '🖥️', label: 'Minimal Desk', prompt: 'Clean modern desk setup, laptop, notebook, {{SUBJECT}} perfectly placed, natural light, organized workspace, no people.' },
+                { id: 'floating_void', emoji: '🛸', label: 'Floating Void', prompt: '{{SUBJECT}} floating in mid-air, zero gravity, neutral grey background, soft levitation, clean, no other objects.' },
+                { id: 'flat_lay_minimal', emoji: '⬇️', label: 'Minimal Flat Lay', prompt: 'Top down view of {{SUBJECT}} on a solid color surface, geometric arrangement, no other props, graphic look.' }
+            ]},
+            { group: '💼 Professions & Jobs', options: [
+                { id: 'military', emoji: '🪖', label: 'Military', prompt: 'Military base setting, tactical gear, camouflage textures, {{SUBJECT}} placed on a crate or equipment, disciplined atmosphere.' },
+                { id: 'engineer', emoji: '👷', label: 'Engineer', prompt: 'Construction site or industrial plant, blueprints, hard hat, steel beams, {{SUBJECT}} in foreground, technical vibe.' },
+                { id: 'surgeon', emoji: '😷', label: 'Surgeon', prompt: 'Operating theater environment, bright sterile lights, surgical tools, stainless steel, {{SUBJECT}} precisely placed, medical focus.' },
+                { id: 'nurse', emoji: '👩‍⚕️', label: 'Nurse', prompt: 'Hospital corridor or station, clean teal/blue scrubs aesthetics, caring atmosphere, {{SUBJECT}} on a counter.' },
+                { id: 'priest', emoji: '⛪', label: 'Priest', prompt: 'Church altar background, stained glass light, ceremonial robes, peaceful and solemn, {{SUBJECT}} featured.' },
+                { id: 'nun', emoji: '🛐', label: 'Nun', prompt: 'Quiet convent garden or cloister, stone arches, religious habit, serenity, {{SUBJECT}} placed gently.' },
+                { id: 'architect', emoji: '📐', label: 'Architect', prompt: 'Modern architecture office, drafting table, scale models, rulers, {{SUBJECT}} integrated into design process.' },
+                { id: 'banker', emoji: '💼', label: 'Banker', prompt: 'High-rise finance office, view of city skyline, mahogany desk, suit fabric textures, {{SUBJECT}} signifying wealth.' },
+                { id: 'pilot', emoji: '✈️', label: 'Pilot', prompt: 'Airplane cockpit view, clouds through window, instrument panel, {{SUBJECT}} on dashboard, aviation style.' },
+                { id: 'firefighter', emoji: '🚒', label: 'Firefighter', prompt: 'Fire station, red fire truck background, turnout gear, dramatic lighting, {{SUBJECT}} reflecting courage.' },
+                { id: 'police', emoji: '👮', label: 'Police', prompt: 'Police station or patrol car, badge, blue lights, urban night, {{SUBJECT}} in a law enforcement setting.' },
+                { id: 'scientist', emoji: '🔬', label: 'Scientist', prompt: 'Science lab, microscope, glassware, white coat, clean bright lighting, {{SUBJECT}} under observation.' },
+                { id: 'artist', emoji: '🎨', label: 'Artist', prompt: 'Messy art studio, easel, paint tubes, splatters, creative chaos, {{SUBJECT}} as the muse.' },
+                { id: 'chef', emoji: '👨‍🍳', label: 'Chef', prompt: 'Professional kitchen, stainless steel, steam, chef whites, fresh ingredients, {{SUBJECT}} plated or prepared.' },
+                { id: 'university_student', emoji: '🎓', label: 'University Student', prompt: 'University library or dorm room, piles of books, laptop, coffee, {{SUBJECT}} aiding study, academic vibe.' }
+            ]},
+            { group: '🤝 Social & Occasions', options: [
+                { id: 'dinner_home', emoji: '🍝', label: 'Home Dinner', prompt: 'Cozy home dinner setting, rustic wooden table, homemade pasta or comfort food dish, {{SUBJECT}} featured as centerpiece, warm candle lighting, hygge atmosphere, relaxed family or friends vibe.' },
+                { id: 'dinner_friends', emoji: '🥘', label: 'Dinner with Friends', prompt: 'Group of happy friends dining together, laughter, clinking glasses, {{SUBJECT}} on table, warm lighting, conviviality, blurred background of people enjoying meal.' },
+                { id: 'girls_night', emoji: '🥂', label: 'Girls Night Out', prompt: 'Girls night out, group of stylish women laughing and celebrating, trendy bar or living room, fun and energetic vibe, {{SUBJECT}} present in the scene, chic and happy.' },
+                { id: 'date_night', emoji: '❤️', label: 'Date Night', prompt: 'Romantic first date dinner, candle light, {{SUBJECT}} central on table, intimate atmosphere, soft focus, roses on table, love is in the air.' },
+                { id: 'sunday_brunch', emoji: '🍳', label: 'Sunday Brunch', prompt: 'Bright airy brunch setting, eggs benedict, mimosas, flowers on table, sunlight streaming in, happy morning vibe with {{SUBJECT}}.' },
+                { id: 'picnic', emoji: '🧺', label: 'Picnic', prompt: 'Checkered blanket on green grass, wicker basket, snacks, {{SUBJECT}} displayed, outdoors, sunny day, relaxed nature vibe.' },
+                { id: 'wedding_toast', emoji: '💍', label: 'Wedding Toast', prompt: 'Wedding reception, bride and groom hands near {{SUBJECT}}, blurred white floral background, elegant and pure love atmosphere.' },
+                { id: 'birthday_party', emoji: '🎂', label: 'Birthday Party', prompt: 'Birthday cake with candles, {{SUBJECT}} next to it, party streamers, colorful and joyful atmosphere, celebration.' },
+                { id: 'happy_hour', emoji: '🍻', label: 'Happy Hour', prompt: 'Crowded bar after work, sleeves rolled up, snacks, {{SUBJECT}} on the counter, golden hour light coming through window, relaxed vibes.' },
+                { id: 'christmas_dinner', emoji: '🎄', label: 'Christmas Dinner', prompt: 'Festive table setting, pine cones, red candles, roast dinner, {{SUBJECT}} as centerpiece, warm bokeh fairy lights, holiday spirit.' },
+                { id: 'new_year_eve', emoji: '🎉', label: 'New Year Eve', prompt: 'Sparklers, gold balloons, confetti, {{SUBJECT}}, party hats, high contrast, celebration midnight vibe.' },
+                { id: 'fireside_chat', emoji: '🔥', label: 'Fireside Chat', prompt: 'Close up of {{SUBJECT}} by a crackling fireplace, wool blanket, marshmallows, cozy winter evening cabin vibe.' },
+                { id: 'bbq_garden', emoji: '🍖', label: 'BBQ Garden', prompt: 'Outdoor grill party, smoke, grilled meat on plates, {{SUBJECT}}, friends in background, summer afternoon vibe.' },
+                { id: 'pizza_night', emoji: '🍕', label: 'Pizza Night', prompt: 'Cardboard pizza boxes open, artisanal pizza, {{SUBJECT}}, casual friday night vibe, grease and joy.' },
+                { id: 'wine_tasting_event', emoji: '🍷', label: 'Tasting Event', prompt: 'Line of products including {{SUBJECT}} on a tasting sheet, professional evaluation environment.' }
+            ]},
+            { group: '🔥 Glamour & Lifestyle', options: [
+                { id: 'bikini_pool', emoji: '👙', label: 'Pool Party', prompt: 'Glamorous pool party scene, beautiful models in stylish bikinis, sun-kissed skin, interacting with {{SUBJECT}}, turquoise water, high energy.' },
+                { id: 'lingerie_party', emoji: '🎀', label: 'Lingerie Party', prompt: 'Elegant party, soft mood lighting, premium {{SUBJECT}}, velvet textures, beautiful lingerie models, sensual elegant posing.' },
+                { id: 'boudoir', emoji: '💋', label: 'Boudoir', prompt: 'Tasteful boudoir photography, beautiful female model in elegant lace lingerie, holding {{SUBJECT}}, soft moody lighting, luxury bedroom.' },
+                { id: 'yacht_life', emoji: '🛥️', label: 'Superyacht', prompt: 'High-end lifestyle on a luxury yacht deck, beautiful model in white swimwear, sunglasses, {{SUBJECT}} nearby, deep blue ocean.' },
+                { id: 'night_gown', emoji: '🌙', label: 'Silk & Night', prompt: 'Beautiful woman on a balcony at night wearing a slip dress, bokeh city lights, holding {{SUBJECT}}, mysterious and elegant.' },
+                { id: 'red_carpet', emoji: '📸', label: 'Red Carpet', prompt: 'Paparazzi style, beautiful model in gala dress holding {{SUBJECT}}, red carpet background, camera flashes, celebrity vibe.' },
+                { id: 'cosplay', emoji: '🧚', label: 'Fantasy Cosplay', prompt: 'Beautiful girl in detailed fantasy cosplay costume, magical forest setting, holding {{SUBJECT}}, ethereal lighting.' },
+                { id: 'luxury_spa', emoji: '🧖‍♀️', label: 'Luxury Spa', prompt: 'Spa environment, white towels, steam, beautiful model relaxing with {{SUBJECT}}, pure and clean aesthetic.' },
+                { id: 'private_jet', emoji: '✈️', label: 'Private Jet', prompt: 'Interior of a private jet, leather seats, champagne glass, beautiful model, {{SUBJECT}} on table, ultimate luxury.' },
+                { id: 'champagne_shower', emoji: '🍾', label: 'Champagne Spray', prompt: 'High energy celebration, popping {{SUBJECT}}, spray freezing in air, laughter, beautiful people, dynamic motion.' },
+                { id: 'lady_in_red', emoji: '🌹', label: 'Lady in Red', prompt: 'Beautiful woman in a stunning red velvet evening gown with a high slit, posing on a grand staircase, holding {{SUBJECT}}, dramatic spotlight, fatal attraction vibe.' },
+                { id: 'morning_sheets', emoji: '🛏️', label: 'Morning After', prompt: 'Bright morning light, white messy bed sheets, a beautiful woman wrapped in a sheet near {{SUBJECT}}, artistic and intimate, soft focus, sun flares.' },
+                { id: 'silk_robe', emoji: '👘', label: 'Silk Robe', prompt: 'Beautiful woman in a luxurious silk robe, standing by a window with morning light, holding {{SUBJECT}}, soft focus, elegant and comfortable.' },
+                { id: 'velvet_lounge', emoji: '🛋️', label: 'Velvet Lounge', prompt: 'Dark moody lounge bar, velvet sofas, beautiful model in cocktail dress with {{SUBJECT}}, low key lighting, jazz club atmosphere.' },
+                { id: 'poolside_dusk', emoji: '🌇', label: 'Poolside Dusk', prompt: 'Golden hour at an infinity pool, silhouette of a beautiful model with {{SUBJECT}}, reflection in water, purple and orange sky, serene luxury.' },
+                { id: 'midnight_rooftop', emoji: '🌃', label: 'Midnight Rooftop', prompt: 'City skyline at night, beautiful model in sequins leaning on railing, {{SUBJECT}} in hand, bokeh city lights, urban glamour.' },
+                { id: 'backstage_pass', emoji: '🎫', label: 'Backstage Pass', prompt: 'Behind the scenes fashion show vibe, mirrors with lights, makeup scattered, beautiful model with {{SUBJECT}} in a robe, candid and raw.' },
+                { id: 'lace_detail', emoji: '🕸️', label: 'Lace Detail', prompt: 'Extreme close up artistic shot of intricate lace lingerie texture on skin, partial view of {{SUBJECT}}, soft focus, intimate and sensual.' },
+                { id: 'vanity_mirror', emoji: '🪞', label: 'Vanity Mirror', prompt: 'Reflection in a vintage vanity mirror, beautiful model in lingerie applying lipstick, {{SUBJECT}} on the table, boudoir preparation scene.' },
+                { id: 'sheer_curtains', emoji: '🌬️', label: 'Sheer Curtains', prompt: 'Silhouette of a beautiful woman in lingerie standing behind sheer white curtains, morning light, holding {{SUBJECT}}, ethereal and dreamy.' },
+                { id: 'luxury_suite', emoji: '🏨', label: 'Luxury Suite', prompt: 'High-end hotel suite interior, messy bed, champagne, beautiful model in lingerie lounging with {{SUBJECT}}, view of city.' },
+                { id: 'runway_angel', emoji: '👼', label: 'Runway Angel', prompt: 'Fashion show runway, beautiful model with wings and lingerie walking, holding {{SUBJECT}}, spotlights, confetti.' },
+                { id: 'midnight_boudoir', emoji: '🕯️', label: 'Midnight Boudoir', prompt: 'Dark bedroom, lit only by candles, beautiful model in black lingerie, holding {{SUBJECT}}, moody and romantic.' }
+            ]},
+            { group: '🍷 Wine & Dining', options: [
+                { id: 'vineyard_glass', emoji: '🍇', label: 'Vineyard Close-up', prompt: '{{SUBJECT}} centered in frame, beautiful vineyard rows softly blurred in background, golden hour natural light, bokeh effect.' },
+                { id: 'old_vines', emoji: '🌿', label: 'Old Vines', prompt: 'Ancient gnarled grape vines, dry soil, history and tradition, {{SUBJECT}} placed on the ground, rustic authenticity.' },
+                { id: 'wine_cave', emoji: '🕯️', label: 'Underground Cave', prompt: 'Deep natural rock wine cave, lit by candles, damp stone walls, exclusive and mysterious, {{SUBJECT}} glowing.' },
+                { id: 'ancient_cellar', emoji: '🏰', label: 'Ancient Cellar', prompt: 'Interior of an ancient underground stone cellar, rows of large oak barrels, dim dramatic lighting, dust motes, {{SUBJECT}} featured.' },
+                { id: 'tasting_counter', emoji: '🛎️', label: 'Tasting Counter', prompt: 'Marble tasting counter, polished glasses, {{SUBJECT}} display, blurred staff, modern winery interior.' },
+                { id: 'michelin_table', emoji: '🍽️', label: 'Michelin Star', prompt: 'Luxury fine dining scene, crisp white tablecloth, crystal glasses, silver cutlery, elegant atmosphere, {{SUBJECT}} perfectly placed.' },
+                { id: 'rustic_trattoria', emoji: '🍝', label: 'Rustic Trattoria', prompt: 'Authentic Italian trattoria, checkered tablecloth, bread basket, warm candle light, {{SUBJECT}} on table, homey vibe.' },
+                { id: 'champagne_bar', emoji: '🥂', label: 'Champagne Bar', prompt: 'Modern luxury bar, neon accents, ice bucket, sparklers, high energy nightlife, {{SUBJECT}} highlighted.' },
+                { id: 'harvest_hands', emoji: '🤲', label: 'Harvest Hands', prompt: 'Close up of weathered worker hands holding {{SUBJECT}}, grape leaves, soil, connection to the earth, authentic.' },
+                { id: 'harvest_festival', emoji: '🍂', label: 'Harvest Festival', prompt: 'Outdoor festival, grapes being crushed, wooden crates, autumn leaves, sunlight, {{SUBJECT}} in foreground.' },
+                { id: 'sommelier_pour', emoji: '🤵', label: 'Sommelier Service', prompt: 'Elegant gloved hand pouring or presenting {{SUBJECT}}, white towel, professional service background.' },
+                { id: 'barrel_room', emoji: '🛢️', label: 'Barrel Room', prompt: 'Symmetrical shot down a corridor of stacked wine barrels, dim warm lighting, smell of oak, industrial winery vibe, {{SUBJECT}} in foreground.' },
+                { id: 'vineyard_aerial', emoji: '🚁', label: 'Vineyard Aerial', prompt: 'Drone shot looking down at geometric rows of vines, {{SUBJECT}} superimposed or sitting on a post in foreground, vast landscape.' }
+            ]},
+            { group: '📍 Locations & Retail', options: [
+                { id: 'supermarket', emoji: '🛒', label: 'Supermarket Shelf', prompt: 'Modern supermarket aisle, shelves stocked, clean retail lighting, perspective shot, {{SUBJECT}} prominent.' },
+                { id: 'luxury_boutique', emoji: '🛍️', label: 'Luxury Boutique', prompt: 'High-end boutique shelf, marble and glass, spot lighting on {{SUBJECT}}, exclusive retail atmosphere.' },
+                { id: 'shop_window', emoji: '🪟', label: 'Shop Window', prompt: 'Cozy shop window view from street at night, warm glow, {{SUBJECT}} displayed, inviting atmosphere.' },
+                { id: 'industrial_loft', emoji: '🏭', label: 'Industrial Loft', prompt: 'Exposed brick wall, metal pipes, edison bulbs, {{SUBJECT}} on concrete table, hipster trendy aesthetic.' },
+                { id: 'neon_city', emoji: '🌃', label: 'Neon City', prompt: 'Wet city street at night, neon signs reflecting in puddles, {{SUBJECT}} in foreground, cyberpunk vibe.' },
+                { id: 'beach_sunset', emoji: '🏖️', label: 'Beach Sunset', prompt: 'Sand, ocean waves in background, sunset sky, {{SUBJECT}} placed on driftwood, tropical vibe.' },
+                { id: 'mountain_cabin', emoji: '🏔️', label: 'Mountain Cabin', prompt: 'View from a wooden deck overlooking snowy mountains, {{SUBJECT}} on railing, crisp cold air, winter luxury.' },
+                { id: 'street_cafe', emoji: '☕', label: 'Parisian Cafe', prompt: 'Small round table on a sidewalk, rattan chairs, {{SUBJECT}}, busy street background, european cafe culture.' },
+                { id: 'old_bridge', emoji: '🌉', label: 'Old Bridge', prompt: '{{SUBJECT}} placed on the stone railing of an old bridge, river or city in background, travel photography style.' },
+                { id: 'seaside_table', emoji: '🌊', label: 'Seaside Table', prompt: 'Table right on the sand or rocks, crashing waves in background, seafood platter, {{SUBJECT}}, fresh sea breeze vibe.' },
+                { id: 'luxury_hotel_bar', emoji: '🏨', label: 'Luxury Hotel Bar', prompt: 'High-end hotel bar, leather stools, shelves of liquor, {{SUBJECT}} featured on counter, sophisticated and expensive.' }
+            ]},
+            { group: '🕰️ Eras & Fantasy', options: [
+                { id: 'victorian', emoji: '🎩', label: 'Victorian Era', prompt: 'Victorian era room, lace, velvet, antiques, {{SUBJECT}} on table, sepia tones, old world luxury.' },
+                { id: 'retro_50s', emoji: '🥤', label: '50s Diner', prompt: '1950s American diner, checkered floor, red leather booths, {{SUBJECT}} on table, jukebox, retro vibe.' },
+                { id: 'roaring_20s', emoji: '🥂', label: 'Roaring 20s', prompt: 'Gatsby style party, art deco geometry, gold and black, feathers, {{SUBJECT}} featured, jazz age.' },
+                { id: 'wild_west', emoji: '🤠', label: 'Wild West', prompt: 'Old saloon interior, wooden bar, swinging doors, wanted poster, {{SUBJECT}} on bar, dusty atmosphere.' },
+                { id: 'medieval', emoji: '🏰', label: 'Medieval Castle', prompt: 'Stone castle interior, torches, tapestries, long wooden table, {{SUBJECT}} as centerpiece, fantasy history.' },
+                { id: 'cyberpunk_world', emoji: '🤖', label: 'Cyberpunk World', prompt: 'Futuristic city, holograms, flying cars, high tech environment, {{SUBJECT}} integrated, sci-fi.' },
+                { id: 'alien_planet', emoji: '🪐', label: 'Alien Planet', prompt: 'Strange purple flora, multiple moons in sky, otherworldly landscape, {{SUBJECT}} on strange rock.' },
+                { id: 'ancient_greece', emoji: '🏺', label: 'Ancient Greece', prompt: 'Black-figure pottery style, orange clay background, black silhouette figures, greek meander border.' },
+                { id: 'egyptian', emoji: '👁️', label: 'Egyptian', prompt: 'Ancient Egyptian art style, profile view figures, hieroglyphics, papyrus texture, offering {{SUBJECT}} to gods.' },
+                { id: 'cave_painting', emoji: '🐂', label: 'Cave Painting', prompt: 'Prehistoric cave art, ochre and charcoal pigments on rock wall, primitive drawing of {{SUBJECT}} and hunt.' },
+                { id: 'colonial', emoji: '🕯️', label: 'Colonial', prompt: '18th century painting, candle light, pewter mugs, wooden table, revolutionary war era tavern vibe.' },
+                { id: 'industrial_rev', emoji: '⚙️', label: 'Steam Punk', prompt: 'Steam punk aesthetic, brass gears, copper pipes, goggles, {{SUBJECT}} with mechanical attachments, victorian sci-fi.' }
+            ]},
+            { group: '🎓 Youth & Lifestyle', options: [
+                { id: 'studentessa', emoji: '👩‍🎓', label: 'Studentessa (Relax)', prompt: 'Lifestyle photography of a female university student relaxing with a glass while studying, books, laptop, cozy sweater, library or cafe background, lo-fi study vibe.' },
+                { id: 'studente', emoji: '👨‍🎓', label: 'Studente (Chill)', prompt: 'Lifestyle photography of a male university student chilling with friends and bottles, casual hoodie, evening atmosphere, dorm or apartment balcony, authentic gen-z vibe.' },
+                { id: 'amici_bar', emoji: '🍻', label: 'Aperitivo Bar', prompt: 'Group of friends (boys and girls) having an aperitivo at a crowded bar, glasses on table, laughter, candid shot, slightly blurry background, friday night mood.' },
+                { id: 'festival', emoji: '🎪', label: 'Wine Festival', prompt: 'Outdoor festival atmosphere, young people sitting on grass, string lights, food trucks, holding plastic glasses, indie folk vibe.' },
+                { id: 'clubbing', emoji: '🪩', label: 'Club / Nightlife', prompt: 'Nightclub atmosphere, neon lights, motion blur of people dancing, premium bottles in ice bucket with sparklers, high energy.' },
+                { id: 'graduation', emoji: '🎓', label: 'Graduation', prompt: 'Group of graduates in gowns throwing caps, holding {{SUBJECT}}, university campus background, success and future.' },
+                { id: 'beach_bonfire', emoji: '🔥', label: 'Beach Bonfire', prompt: 'Night time on beach, bonfire light illuminating faces, guitar playing, {{SUBJECT}} passed around, acoustic chill vibe.' },
+                { id: 'karaoke', emoji: '🎤', label: 'Karaoke Night', prompt: 'Dimly lit karaoke room, neon lyrics on screen, someone singing into mic, {{SUBJECT}} on table, fun and chaotic.' },
+                { id: 'game_night', emoji: '🎲', label: 'Game Night', prompt: 'Table full of board games, dice, cards, snacks, and {{SUBJECT}}, hands reaching for pieces, cozy indoor fun.' },
+                { id: 'concert', emoji: '🤘', label: 'Concert Crowd', prompt: 'POV from crowd at a concert, stage lights, hands in air, holding {{SUBJECT}}, energetic music vibe.' },
+                { id: 'van_life', emoji: '🚐', label: 'Van Life', prompt: 'Back of a camper van open to a scenic view, cozy blankets, {{SUBJECT}}, travel adventure lifestyle.' },
+                { id: 'camping', emoji: '⛺', label: 'Camping', prompt: 'Tent glowing at night, camping chairs, enamel mugs with {{SUBJECT}}, starry sky, outdoorsy vibe.' },
+                { id: 'cooking', emoji: '👨‍🍳', label: 'Cooking Together', prompt: 'Couple or friends in a messy kitchen cooking, flour in air, laughing, {{SUBJECT}} on counter, candid.' },
+                { id: 'dance_floor', emoji: '💃', label: 'Dance Floor', prompt: 'Blurry artistic shot of people dancing, disco ball reflections, {{SUBJECT}} in foreground sharp, movement and rhythm.' },
+                { id: 'selfie', emoji: '🤳', label: 'Group Selfie', prompt: 'POV of a phone taking a selfie of a group of friends with {{SUBJECT}}, happy faces, social media style.' }
+            ]}
+        ];
+
+        // --- RESTORED MEDIUMS (THE HOW) - RESTORED V18.1 CONTENT ---
+        const mediumsList = [
+            { group: '📸 Photography Styles', options: [
+                { id: 'photorealistic', emoji: '📷', label: 'Photorealistic', prompt: 'High-resolution professional photography, 8k, realistic textures, balanced lighting, sharp focus.' },
+                { id: 'studio_hero', emoji: '💡', label: 'Studio Hero', prompt: 'Commercial studio photography, dramatic rim lighting, perfect shadows, clean background, product hero shot.' },
+                { id: 'polaroid', emoji: '🎞️', label: '90s Polaroid', prompt: 'Authentic Polaroid aesthetic, flash photography, washed colors, vignette, nostalgic indie vibe.' },
+                { id: 'film_noir', emoji: '🕵️', label: 'Film Noir (B&W)', prompt: 'Black and white high contrast photography, dramatic shadows, venetian blinds, cinematic mystery.' },
+                { id: 'kodachrome', emoji: '🎞️', label: '70s Kodachrome', prompt: 'Vintage 70s film look, warm yellow/orange tones, grain, nostalgic summer vibe.' },
+                { id: 'macro', emoji: '🔍', label: 'Extreme Macro', prompt: 'Extreme close-up, shallow depth of field, focus on texture and material details.' },
+                { id: 'fisheye', emoji: '🐟', label: 'Fisheye Lens', prompt: 'Ultra wide angle distorted perspective, barrel distortion, dynamic and edgy 90s skate video style.' },
+                { id: 'bokeh_balls', emoji: '✨', label: 'Bokeh Balls', prompt: 'Extreme bokeh background with colorful light circles, {{SUBJECT}} sharp in foreground, magical and festive atmosphere.' },
+                { id: 'long_exposure', emoji: '🌌', label: 'Star Trails', prompt: 'Night sky long exposure, star trails swirling, {{SUBJECT}} stationary in foreground, cosmic connection.' },
+                { id: 'underwater', emoji: '🫧', label: 'Underwater', prompt: '{{SUBJECT}} submerged underwater, air bubbles rising, refracted light rays, ethereal blue tones.' },
+                { id: 'smoke_art', emoji: '💨', label: 'Smoke Art', prompt: 'Colored smoke swirling around the {{SUBJECT}}, studio black background, mysterious and fluid forms.' },
+                { id: 'reflection_water', emoji: '🪞', label: 'Mirror Reflection', prompt: '{{SUBJECT}} placed on a still body of water, perfect mirror reflection, calm and symmetrical composition.' },
+                { id: 'double_lighting', emoji: '🔴', label: 'Double Lighting', prompt: 'Studio gel lighting, blue light from left, red light from right, dramatic color contrast on {{SUBJECT}}.' },
+                { id: 'prism_effect', emoji: '🌈', label: 'Prism Effect', prompt: 'Photography through a glass prism, rainbow leaks, distorted refractions, dreamy and experimental.' },
+                { id: 'tilt_shift', emoji: '🏙️', label: 'Tilt Shift', prompt: 'Tilt shift lens effect, miniature world look, {{SUBJECT}} looks like a toy model, selective focus.' },
+                { id: 'infrared', emoji: '🌲', label: 'Infrared', prompt: 'Infrared photography, foliage turns white/pink, surreal landscape, {{SUBJECT}} in otherworldly setting.' },
+                { id: 'drone', emoji: '🚁', label: 'Drone/Aerial', prompt: 'High angle aerial view, looking straight down, geographic patterns.' }
+            ]},
+            { group: '📰 Editorial & Magazine', options: [
+                { id: 'vogue', emoji: '📸', label: 'Vogue (High Fashion)', prompt: 'High fashion magazine cover style, elegant model posing with {{SUBJECT}} as a luxury accessory, dramatic studio lighting, chic dress, sharp focus, glossy editorial look.' },
+                { id: 'gq_style', emoji: '🤵', label: 'Gentleman (GQ)', prompt: 'GQ magazine style, well-groomed man in a tuxedo or sharp suit, holding {{SUBJECT}}, leather armchair, cigar smoke, dark moody luxury, confident look.' },
+                { id: 'kinfolk', emoji: '📖', label: 'Kinfolk (Slow Life)', prompt: 'Kinfolk magazine aesthetic, rustic minimalism, neutral tones, linen tablecloth, artisan bread and {{SUBJECT}}, soft natural light, slow living vibe.' },
+                { id: 'natgeo', emoji: '🌍', label: 'NatGeo (Docu)', prompt: 'Travel documentary style photography, worker with weathered hands, dramatic landscape, authentic cultural moment with {{SUBJECT}}, storytelling, vivid colors.' },
+                { id: 'arch_digest', emoji: '🏠', label: 'Arch Digest (Interior)', prompt: 'Interior design photography, modern luxury living room, {{SUBJECT}} placed as decor on a marble coffee table, perfect lighting and composition.' },
+                { id: 'minimalist_white', emoji: '⬜', label: 'Minimalist White', prompt: 'High key photography, white background, white props, {{SUBJECT}} as the only colored object, clean, apple store aesthetic.' },
+                { id: 'dark_moody_food', emoji: '🌑', label: 'Dark Moody Food', prompt: 'Dark photography, slate background, shadows, rich colors, chiaroscuro effect, {{SUBJECT}} highlighted, premium style.' },
+                { id: 'lifestyle_blog', emoji: '💻', label: 'Lifestyle Blog', prompt: 'Flat lay with laptop, planner, glasses, and {{SUBJECT}}, bright airy filter, influencer work-from-home vibe.' },
+                { id: 'fashion_week', emoji: '👠', label: 'Fashion Week Street', prompt: 'Street style photography, model walking on city street holding {{SUBJECT}}, blurry cars, urban chic.' },
+                { id: 'perfume_ad', emoji: '🌸', label: 'Perfume Ad', prompt: 'Dreamy, soft focus, water ripples, flowers floating, {{SUBJECT}} submerged or floating, ethereal and scented vibe.' },
+                { id: 'watch_ad', emoji: '⌚', label: 'Luxury Macro', prompt: 'Macro shot, sharp details, masculine lighting, leather textures, {{SUBJECT}} next to a luxury watch, success and time.' },
+                { id: 'coffee_table_book', emoji: '📚', label: 'Art Book', prompt: 'Artistic composition, hard light, shadows, {{SUBJECT}} arranged with art objects, museum quality photography.' },
+                { id: 'monochrome_chic', emoji: '⚫', label: 'Monochrome Chic', prompt: 'Black and white high contrast photography, graphic lines, silhouette of {{SUBJECT}}, timeless elegance.' },
+                { id: 'pastel_pop', emoji: '🍭', label: 'Pastel Pop', prompt: 'Wes Anderson color palette, pastel pink and blue background, studio lighting, quirky composition, {{SUBJECT}} pop art.' }
+            ]},
+            { group: '🎨 Masters & Fine Art', options: [
+                { id: 'da_vinci', emoji: '📜', label: 'Leonardo da Vinci', prompt: 'Renaissance sketch in the style of Leonardo da Vinci, sepia paper, ink anatomical details, vitruvian engineering style.' },
+                { id: 'van_gogh', emoji: '🌻', label: 'Van Gogh', prompt: 'Oil painting style of Vincent Van Gogh, thick impasto brushstrokes, swirling starry sky patterns, vibrant blues and yellows.' },
+                { id: 'dali', emoji: '🫠', label: 'Salvador Dalí', prompt: 'Surrealist painting style, melting objects, dreamlike desert landscape, hyper-realistic but impossible.' },
+                { id: 'monet', emoji: '🖼️', label: 'Claude Monet', prompt: 'Impressionist style, dabbed brushstrokes, light and atmosphere focus, garden colors, soft edges.' },
+                { id: 'picasso', emoji: '🎭', label: 'Picasso', prompt: 'Cubist style, fragmented geometry, multiple perspectives at once, abstract faces and shapes.' },
+                { id: 'klimt', emoji: '🌟', label: 'Gustav Klimt', prompt: 'Symbolist style, gold leaf textures, decorative geometric patterns, swirling mosaics.' },
+                { id: 'basquiat', emoji: '👑', label: 'Basquiat', prompt: 'Neo-expressionist style, raw scribbles, crown motifs, chaotic composition, urban graffiti aesthetic.' },
+                { id: 'warhol', emoji: '🍌', label: 'Andy Warhol', prompt: 'Pop Art screen print, bold flat colors, high contrast, repeating patterns, celebrity culture style.' },
+                { id: 'hokusai', emoji: '🌊', label: 'Hokusai (Ukiyo-e)', prompt: 'Japanese woodblock print style, flat outlines, great wave aesthetic, traditional ink colors.' },
+                { id: 'mucha', emoji: '⚜️', label: 'Alphonse Mucha', prompt: 'Art Nouveau style, intricate floral borders, flowing hair, pastel colors, elegant illustration.' },
+                { id: 'banksy', emoji: '🐀', label: 'Banksy', prompt: 'Street art stencil style, graffiti on textured brick wall, black and white with red accents, ironic theme.' },
+                { id: 'hopper', emoji: '🏙️', label: 'Edward Hopper', prompt: 'Edward Hopper style painting, lonely mood, cinematic lighting, sense of isolation.' },
+                { id: 'escher', emoji: '🔄', label: 'M.C. Escher', prompt: 'Lithograph style, impossible geometry, tessellations, black and white, mathematical patterns.' },
+                { id: 'rembrandt', emoji: '🎨', label: 'Rembrandt', prompt: 'Baroque painting style, dramatic chiaroscuro lighting, dark brown background, spotlight on {{SUBJECT}}, rich texture, old master feel.' },
+                { id: 'matisse', emoji: '✂️', label: 'Henri Matisse', prompt: 'Fauvism style, paper cutouts, bold unnatural colors, flat shapes, joyful and decorative composition.' },
+                { id: 'frida', emoji: '🌵', label: 'Frida Kahlo', prompt: 'Naïve art style, self-portrait elements, jungle background, monkeys, thorns, vibrant mexican colors.' },
+                { id: 'renaissance_oil', emoji: '👼', label: 'Renaissance Oil', prompt: 'Classic Renaissance composition, cherubs, drapery, clear blue landscape in distance, {{SUBJECT}} treated as a holy relic.' },
+                { id: 'lichtenstein', emoji: '💬', label: 'Lichtenstein Comic', prompt: 'Roy Lichtenstein style, ben-day dots, thick black outlines, speech bubble saying "Delicious!", comic book aesthetic.' },
+                { id: 'street_mural', emoji: '🧱', label: 'Street Mural', prompt: 'Large scale colorful mural on a city building side, realistic {{SUBJECT}} interacting with urban environment, public art style.' },
+                { id: 'geometric_abstract', emoji: '📐', label: 'Geometric Abstract', prompt: 'Kandinsky style, lines, circles, triangles, abstract representation of {{SUBJECT}}, music on canvas, non-objective art.' }
+            ]},
+            { group: '✏️ Manual & Physical', options: [
+                { id: 'oil_painting', emoji: '🎨', label: 'Classic Oil', prompt: 'Classical oil painting, rich deep colors, glazed layers, realistic but painterly texture.' },
+                { id: 'watercolor', emoji: '💧', label: 'Watercolor', prompt: 'Watercolor painting, wet-on-wet technique, color bleeding, soft pastel tones, white paper texture.' },
+                { id: 'charcoal', emoji: '✏️', label: 'Charcoal', prompt: 'Rough charcoal drawing, smudged shadows, high contrast black and white, textured paper.' },
+                { id: 'comic_book', emoji: '🗯️', label: 'Comic Book', prompt: 'American comic book style, thick black outlines, bold flat colors, ben-day dots, action lines.' },
+                { id: 'manga', emoji: '🇯🇵', label: 'Manga', prompt: 'Japanese Manga style, black and white ink, screentones, dynamic speed lines.' },
+                { id: 'claymation', emoji: '🧱', label: 'Claymation', prompt: 'Plasticine stop-motion style, fingerprint textures, soft lighting, Aardman animation look.' },
+                { id: 'origami', emoji: '🦢', label: 'Origami', prompt: 'World made of folded paper, sharp geometric creases, paper texture lighting.' },
+                { id: 'mosaic', emoji: '🧩', label: 'Mosaic', prompt: 'Ancient roman mosaic, image formed by small colored tile tesserae, grout lines.' },
+                { id: 'neon_sign', emoji: '💡', label: 'Neon Sign', prompt: 'Glowing neon tubes forming the image, dark brick background, electric colors.' },
+                { id: 'coffee_stain', emoji: '☕', label: 'Coffee Stain Art', prompt: 'Art made from coffee spills and ring stains, sepia tones, watercolor paper, organic and accidental look.' },
+                { id: 'sand_art', emoji: '🏖️', label: 'Sand Art', prompt: 'Drawing in sand on a beach, natural texture, ephemeral art, {{SUBJECT}} drawn with a stick in sand.' },
+                { id: 'wood_carving', emoji: '🪵', label: 'Wood Carving', prompt: 'Carved wood texture, relief sculpture, wood grain visible, rustic handmade totemic look.' },
+                { id: 'embroidery', emoji: '🧵', label: 'Embroidery', prompt: 'Embroidered fabric texture, thread stitches visible, fabric background, handmade craft style.' },
+                { id: 'crayon_drawing', emoji: '🧸', label: 'Crayon Drawing', prompt: 'Child-like crayon drawing, waxy texture, bright primary colors, simple shapes on construction paper, naive art.' },
+                { id: 'spray_paint', emoji: '💨', label: 'Spray Paint', prompt: 'Airbrush or spray paint art, soft gradients, splatter effects, street mural technique, graffiti style.' },
+                { id: 'ink_pen', emoji: '✒️', label: 'Ink Pen', prompt: 'Detailed ink pen illustration, cross-hatching shading, comic book style black and white line art, distinct outlines.' },
+                { id: 'lino_cut', emoji: '🔪', label: 'Linocut', prompt: 'Linocut print style, bold blocky lines, texture of the carving, black ink on paper, rustic and handmade feel.' },
+                { id: 'stained_glass', emoji: '⛪', label: 'Stained Glass', prompt: 'Stained glass window style, colorful glass fragments held by lead strips, light shining through, religious or mystical theme.' },
+                { id: 'oil_pastel', emoji: '🖍️', label: 'Oil Pastel', prompt: 'Oil pastel drawing, textured strokes, vibrant blending, impressionistic messy look, artistic sketchbook.' },
+                { id: 'pencil_sketch', emoji: '📝', label: 'Pencil Sketch', prompt: 'Graphite pencil drawing, smooth shading, sharp details, realistic rendering on sketchbook paper.' }
+            ]},
+            { group: '🎞️ Cinema & Atmosphere', options: [
+                { id: 'wes_anderson', emoji: '🎀', label: 'Wes Anderson', prompt: 'Wes Anderson movie aesthetic, perfect symmetry, pastel color palette (pink, mint), quirky centered composition, flat lighting.' },
+                { id: 'tarantino', emoji: '🩸', label: 'Tarantino', prompt: 'Tarantino movie frame, low angle trunk shot, intense colors, cool character holding {{SUBJECT}}, 70s vibe, gritty texture.' },
+                { id: 'kubrick', emoji: '👁️', label: 'Stanley Kubrick', prompt: 'Kubrick aesthetic, one-point perspective corridor, stark lighting, unnerving symmetry, {{SUBJECT}} centered, eerie perfection.' },
+                { id: 'blade_runner', emoji: '🤖', label: 'Blade Runner', prompt: 'Sci-fi noir, rain, neon signs reflecting in puddles, flying cars in background, futuristic {{SUBJECT}} design, dystopian mood.' },
+                { id: 'amelie', emoji: '💚', label: 'Amélie', prompt: 'Jean-Pierre Jeunet style, saturated green and red colors, wide angle close up, whimsical and magical realism, Paris vibe.' },
+                { id: 'godfather', emoji: '🌹', label: 'The Godfather', prompt: 'Coppola style, dark warm office, venetian blinds, shadows, {{SUBJECT}} on heavy wooden desk, mafia boss vibe.' },
+                { id: 'great_gatsby', emoji: '🥂', label: 'Great Gatsby', prompt: 'Baz Luhrmann style, excess, confetti, fireworks, champagne tower, art deco patterns, vibrant party energy.' },
+                { id: 'tim_burton', emoji: '💀', label: 'Tim Burton', prompt: 'Gothic fantasy style, twisted trees, dark stripes, pale moonlight, spooky and quirky {{SUBJECT}} design.' },
+                { id: 'matrix', emoji: '💊', label: 'The Matrix', prompt: 'Green code rain background, glossy black leather aesthetic, sunglasses reflection of {{SUBJECT}}, cool cyber sci-fi.' },
+                { id: 'disney_princess', emoji: '👑', label: 'Disney Magic', prompt: 'Classic Disney animation style, sparkles, singing birds, castle in background, magical glowing {{SUBJECT}}.' },
+                { id: '80s_sitcom', emoji: '📺', label: '80s Sitcom', prompt: 'Bright studio lighting, laugh track vibe, retro living room set, colorful sweaters, wholesome family dinner moment.' },
+                { id: 'noir', emoji: '🕵️', label: 'Film Noir', prompt: 'Black and white Film Noir cinematography, high contrast, dramatic shadows (venetian blinds), smoke, mysterious detective atmosphere.' }
+            ]},
+            { group: '💻 Digital & Technical', options: [
+                { id: 'digital_collage', emoji: '✂️', label: 'Digital Collage', prompt: 'Surreal digital collage art, mixing vintage botanical cuts, retro photos of people, and modern geometric shapes, {{SUBJECT}} as the central totem, vibrant and eclectic composition.' },
+                { id: 'ghibli', emoji: '☁️', label: 'Studio Ghibli', prompt: 'Studio Ghibli anime style, lush hand-painted backgrounds, fluffy clouds, vibrant colors, magical atmosphere.' },
+                { id: 'blueprint', emoji: '📏', label: 'Blueprint', prompt: 'Technical architectural blueprint, cyan background, white lines, measurements and angles, engineering schematic.' },
+                { id: 'cyberpunk_art', emoji: '🌃', label: 'Cyberpunk Art', prompt: 'Digital sci-fi art, neon glow, rain slicked surfaces, futuristic tech details.' },
+                { id: 'vaporwave', emoji: '🌴', label: 'Vaporwave', prompt: 'Vaporwave aesthetic, glitch art, roman busts, neon grids, pink and cyan palette, VHS static.' },
+                { id: 'low_poly', emoji: '🔺', label: 'Low Poly', prompt: 'Low poly 3D art, faceted geometric shapes, flat shading, minimalist style.' },
+                { id: 'pixel_art', emoji: '👾', label: 'Pixel Art', prompt: 'Retro 16-bit pixel art, visible pixels, limited color palette, video game sprite style.' },
+                { id: '3d_render', emoji: '🧊', label: 'Unreal Engine 5', prompt: 'High fidelity 3D render, ray tracing, octane render, glossy materials, perfect digital lighting.' },
+                { id: 'vector_flat', emoji: '🖌️', label: 'Corporate Vector', prompt: 'Flat vector illustration, corporate memphis style, solid colors, no outlines, minimalist.' },
+                { id: 'paper_cutout', emoji: '📄', label: 'Paper Cutout', prompt: 'Layered paper art style, shadows creating depth, different colored paper forming the {{SUBJECT}} shape, craft aesthetic.' },
+                { id: 'chalkboard', emoji: '🖍️', label: 'Chalkboard', prompt: 'Black chalkboard background, white chalk drawing of {{SUBJECT}} and menu lettering, dusty texture, bistro menu style.' },
+                { id: 'holographic', emoji: '💿', label: 'Holographic', prompt: 'Iridescent holographic foil texture, rainbow reflections, futuristic shiny metal look on {{SUBJECT}}, cyber fashion.' },
+                { id: 'wireframe_3d', emoji: '🕸️', label: 'Wireframe 3D', prompt: '3D modeling wireframe mesh, green lines on black background, digital structure of {{SUBJECT}}, tech demo style.' },
+                { id: 'risograph', emoji: '🖨️', label: 'Risograph', prompt: 'Risograph print style, grainy texture, misaligned color layers, vibrant neon ink, zine aesthetic.' },
+                { id: 'glitch_art', emoji: '📺', label: 'Glitch Art', prompt: 'Digital corruption, pixel sorting, chromatic aberration, distorted {{SUBJECT}}, cyber error aesthetic.' },
+                { id: 'poster_50s', emoji: '📌', label: '50s Propaganda', prompt: 'Vintage 1950s advertising poster style, lush painterly illustration, technicolor saturation, distressed paper texture, propaganda aesthetic, bold typography, idealized American Dream.' },
+                { id: 'poster_30s', emoji: '🚂', label: '30s Art Deco', prompt: '1930s Art Deco travel poster style, WPA industrial aesthetic, bold geometric shapes, strong vertical lines, airbrush gradients, flat colors, constructivist influence.' }
+            ]}
+        ];
+
+        // --- TRANSLATIONS ---
+        const translations = {
+            it: {
+                title: "SocialStudio",
+                subtitle: "Marketing Edition",
+                topicLabel: "Topic Campagna / Nome Prodotto",
+                topicPlaceholder: "Es: Sneakers, Barolo 2018, Orologio Lusso...",
+                detailsLabel: "Dettagli Prodotto",
+                detailsPlaceholder: "Es: Bottiglia Vino Rosso, Scarpa da Corsa...",
+                ctxDetailsLabel: "Dettagli Contesto (Persone, Luce, Setting)",
+                ctxDetailsPlaceholder: "Es: Nessuna persona, luce notturna, prodotto tenuto in mano...",
+                platformLabel: "Tipo di Contenuto",
+                techLabel: "Densità Informazioni",
+                vibeLabel: "Estetica Brand",
+                contextLabel: "Contesto (Dove)",
+                mediumLabel: "Stile Artistico (Come)",
+                productUpload: "Foto Prodotto (Forma)",
+                logoUpload: "Logo / Etichetta (Texture)",
+                personUpload: "Modello/Persona (Opzionale)",
+                uploadBtn: "Carica",
+                replaceBtn: "Sostituisci",
+                genBtn: "Genera",
+                regenTextBtn: "Rigenera Testo",
+                processing: "Elaborazione...",
+                resultTitle: "Visual Generato",
+                copyTitle: "Social Copy (Multi-Piattaforma)",
+                copyBtn: "Copia",
+                shareBtn: "Condividi",
+                manualShareBtn: "Condividi Input (No API)",
+                genPromptsBtn: "Genera Prompt (Debug/Manual)",
+                memeToneLabel: "Tono Meme",
+                memeSarcastic: "Ironico / Sarcastico",
+                memeMarketing: "Marketing / Promo",
+                loadingMsgs: [
+                    "Analizzando il brand...", "Allestendo il set...", "Regolando le luci...", 
+                    "Cercando l'angolazione...", "Renderizzando...", "Ottimizzando..."
+                ],
+                warnEdit: "Asset simulato stilisticamente (Modello editing non disponibile)",
+                warnIgnore: "Asset ignorato (Modello non disponibile)",
+                errGen: "Errore Generazione (Riprova).",
+                apiKeyMissing: "API Key mancante! Configurala nel codice sorgente o utilizza il tasto 'Condividi Input' per generare il prompt manualmente.",
+                tabs: { ig: "Instagram", li: "LinkedIn", story: "Stories" },
+                genModeLabel: "Modalità Generazione",
+                singleGen: "Singola (Veloce)",
+                batchGen: "Batch (4 Varianti)",
+                promptImgLabel: "Prompt Generazione Immagine:",
+                promptTxtLabel: "Istruzioni Generazione Testo:"
+            },
+            en: {
+                title: "SocialStudio",
+                subtitle: "Marketing Edition",
+                topicLabel: "Campaign Topic / Product Name",
+                topicPlaceholder: "Ex: Sneakers, Barolo 2018, Luxury Watch...",
+                detailsLabel: "Product Definition",
+                detailsPlaceholder: "Ex: Red Wine Bottle, Running Shoe...",
+                ctxDetailsLabel: "Context Details (People, Light, Setting)",
+                ctxDetailsPlaceholder: "Ex: No people, night light, held in hand...",
+                platformLabel: "Content Type",
+                techLabel: "Info Density",
+                vibeLabel: "Brand Aesthetic",
+                contextLabel: "Context (Where)",
+                mediumLabel: "Artistic Medium (How)",
+                productUpload: "Product Shot (Shape)",
+                logoUpload: "Logo / Label (Texture)",
+                personUpload: "Model/Person (Optional)",
+                uploadBtn: "Upload",
+                replaceBtn: "Replace",
+                genBtn: "Generate",
+                regenTextBtn: "Regenerate Text",
+                processing: "Processing...",
+                resultTitle: "Generated Visual",
+                copyTitle: "Social Copy (Multi-Platform)",
+                copyBtn: "Copy",
+                shareBtn: "Share",
+                manualShareBtn: "Share Inputs (No API)",
+                genPromptsBtn: "Generate Prompts (Debug/Manual)",
+                memeToneLabel: "Meme Tone",
+                memeSarcastic: "Sarcastic / Ironic",
+                memeMarketing: "Marketing / Promo",
+                loadingMsgs: [
+                    "Analyzing brand...", "Setting stage...", "Adjusting lights...", 
+                    "Finding angle...", "Rendering...", "Optimizing..."
+                ],
+                warnEdit: "Asset stylistically simulated (Editing unavailable)",
+                warnIgnore: "Asset ignored (Model unavailable)",
+                errGen: "Generation Error (Retry).",
+                apiKeyMissing: "Missing API Key! Configure it in the source code or use the 'Share Inputs' button to generate the prompt manually.",
+                tabs: { ig: "Instagram", li: "LinkedIn", story: "Stories" },
+                genModeLabel: "Generation Mode",
+                singleGen: "Single (Fast)",
+                batchGen: "Batch (4 Variants)",
+                promptImgLabel: "Image Generation Prompt:",
+                promptTxtLabel: "Text Generation Instructions:"
+            }
+        };
+
+        async function fetchWithBackoff(url, options, retries = 5, delay = 1000) {
+            try {
+                const response = await fetch(url, options);
+                if (response.status === 429 || response.status >= 500) throw new Error(`Server busy (${response.status})`);
+                if (!response.ok) { const txt = await response.text(); throw new Error(`API Error: ${response.status} - ${txt}`); }
+                return response.json();
+            } catch (error) {
+                if (retries <= 0) throw error;
+                await new Promise(r => setTimeout(r, delay));
+                return fetchWithBackoff(url, options, retries - 1, delay * 2);
+            }
+        }
+
+        function App() {
+            const [prompt, setPrompt] = useState('');
+            const [customDetails, setCustomDetails] = useState(''); 
+            const [contextDetails, setContextDetails] = useState(''); 
+            const [contextStyle, setContextStyle] = useState('vineyard_glass'); 
+            const [mediumStyle, setMediumStyle] = useState('photorealistic'); 
+            const [techLevel, setTechLevel] = useState(50); 
+            const [luxuryLevel, setLuxuryLevel] = useState(50); 
+            const [platform, setPlatform] = useState('bundle'); 
+            const [memeType, setMemeType] = useState('sarcastic'); 
+            const [batchSize, setBatchSize] = useState(1); 
+            const [darkMode, setDarkMode] = useState(true); 
+            const [lang, setLang] = useState('it'); 
+            const [activeTab, setActiveTab] = useState('instagram'); 
+            
+            const [copy, setCopy] = useState(null); 
+
+            const [productImg, setProductImg] = useState(null); 
+            const [productMimeType, setProductMimeType] = useState(null);
+            const [logoImg, setLogoImg] = useState(null);
+            const [logoMimeType, setLogoMimeType] = useState(null);
+            const [personImg, setPersonImg] = useState(null); 
+            const [personMimeType, setPersonMimeType] = useState(null); 
+
+            const [images, setImages] = useState([]); 
+            const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+            
+            const [textOptions, setTextOptions] = useState(null); 
+            const [memeText, setMemeText] = useState(null);
+
+            const [finalMemeImage, setFinalMemeImage] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [textLoading, setTextLoading] = useState(false); 
+            const [loadingStep, setLoadingStep] = useState(''); 
+            const [loadingMsg, setLoadingMsg] = useState('');
+            const [error, setError] = useState(null);
+            const [warningMsg, setWarningMsg] = useState(null); 
+            
+            // Debug Prompts State
+            const [debugPrompts, setDebugPrompts] = useState(null); // { image: '', text: '' }
+
+            const productInputRef = useRef(null);
+            const logoInputRef = useRef(null);
+            const personInputRef = useRef(null);
+            const canvasRef = useRef(null);
+
+            const t = translations[lang]; 
+
+            const theme = {
+                bg: darkMode ? 'bg-stone-900' : 'bg-[#fdf2f8]',
+                card: darkMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-wine-100',
+                text: darkMode ? 'text-stone-100' : 'text-stone-800',
+                subtext: darkMode ? 'text-stone-400' : 'text-stone-500',
+                accent: 'text-wine-600',
+                accentBg: 'bg-wine-800',
+                inputBg: darkMode ? 'bg-stone-900 border-stone-700 text-white' : 'bg-[#fffbfc] border-wine-50 text-wine-900',
+            };
+
+            const getPrompt = (list, id) => {
+                for (const group of list) {
+                    const found = group.options.find(opt => opt.id === id);
+                    if (found) return found.prompt;
+                }
+                return list[0].options[0].prompt; 
+            };
+
+            const getTechLabel = () => {
+                if (lang === 'it') return techLevel < 30 ? 'Accessibile' : techLevel < 70 ? 'Approfondito' : 'Esperto';
+                return techLevel < 30 ? 'Accessible' : techLevel < 70 ? 'Detailed' : 'Expert';
+            };
+            
+            const getLuxuryLabel = () => {
+                if (lang === 'it') return luxuryLevel < 30 ? 'Casual/Playful' : luxuryLevel < 70 ? 'Curato' : 'Esclusivo';
+                return luxuryLevel < 30 ? 'Casual/Playful' : luxuryLevel < 70 ? 'Polished' : 'Exclusive';
+            };
+
+            useEffect(() => {
+                setLoadingMsg(t.loadingMsgs[0]);
+                let interval;
+                if (loading) {
+                    interval = setInterval(() => {
+                        setLoadingMsg(t.loadingMsgs[Math.floor(Math.random() * t.loadingMsgs.length)]);
+                    }, 2500);
+                }
+                return () => clearInterval(interval);
+            }, [loading, lang]);
+
+            const resizeImage = (file) => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const maxSize = 1536; 
+                            if (width > height) { if (width > maxSize) { height *= maxSize / width; width = maxSize; } } 
+                            else { if (height > maxSize) { width *= maxSize / height; height = maxSize; } }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            let outputType = file.type;
+                            let quality = 1.0;
+                            if (file.type !== 'image/png') {
+                                outputType = 'image/jpeg';
+                                quality = 0.85; 
+                            }
+                            resolve(canvas.toDataURL(outputType, quality));
+                        };
+                        img.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const copyToClipboard = async (text) => {
+                if (!text) return;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    alert(lang === 'it' ? "Copiato!" : "Copied!");
+                } catch (err) {
+                    try {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.top = "0"; textArea.style.left = "0"; textArea.style.position = "fixed";
+                        document.body.appendChild(textArea);
+                        textArea.focus(); textArea.select(); 
+                        const successful = document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        if (successful) alert(lang === 'it' ? "Testo copiato!" : "Text copied!");
+                        else throw new Error("Copy failed");
+                    } catch (err) { 
+                        console.error(err);
+                        alert(lang === 'it' ? "Errore copia manuale" : "Manual copy error"); 
+                    }
+                }
+            };
+
+            const dataURItoBlob = (dataURI) => {
+                const byteString = atob(dataURI.split(',')[1]);
+                const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                return new Blob([ab], { type: mimeString });
+            };
+            
+            const handleManualShare = async () => {
+                // 1. Construct Prompt (reusing logic)
+                const contextPrompt = getPrompt(contextsList, contextStyle);
+                const mediumPrompt = getPrompt(mediumsList, mediumStyle);
+                let subject = customDetails.trim() || prompt.trim() || "product";
+                if (subject.length > 50) subject = "the product described";
+                const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
+
+                let fullPrompt = "";
+                if (platform === 'meme') {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
+                } else {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
+                }
+
+                // Explicit Instruction for External AIs
+                let finalManualPrompt = `** GENERATE IMAGE **\n\nPROMPT: ${fullPrompt}`;
+
+                let indexCounter = 1;
+                const filesToShare = [];
+                
+                if (productImg) {
+                    filesToShare.push(new File([dataURItoBlob(productImg)], "input_product.jpg", { type: productMimeType || 'image/jpeg' }));
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Structural reference for the product.`;
+                    indexCounter++;
+                }
+                if (logoImg) {
+                    filesToShare.push(new File([dataURItoBlob(logoImg)], "input_logo.png", { type: logoMimeType || 'image/png' }));
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Logo/texture to apply.`;
+                    indexCounter++;
+                }
+                if (personImg) {
+                    filesToShare.push(new File([dataURItoBlob(personImg)], "input_person.jpg", { type: personMimeType || 'image/jpeg' }));
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Person to include as main subject.`;
+                    indexCounter++;
+                }
+
+                // 2. Copy to clipboard
+                await copyToClipboard(finalManualPrompt);
+
+                // 3. Share
+                if (navigator.share) {
+                    try {
+                        const shareData = {
+                            title: 'SocialStudio Prompt',
+                            text: finalManualPrompt
+                        };
+                        
+                        // Only add files if they exist and are supported
+                        if (filesToShare.length > 0 && navigator.canShare && navigator.canShare({ files: filesToShare })) {
+                            shareData.files = filesToShare;
+                        }
+
+                        await navigator.share(shareData);
+                    } catch (error) {
+                        console.error('Error sharing:', error);
+                        // Fallback alert if share fails but copy succeeded
+                        if (error.name !== 'AbortError') {
+                            alert(lang === 'it' ? "Prompt copiato negli appunti!" : "Prompt copied to clipboard!");
+                        }
+                    }
+                } else {
+                    // Fallback for desktop without share API
+                    alert(lang === 'it' ? "Prompt copiato negli appunti! (Condivisione non supportata)" : "Prompt copied to clipboard! (Share not supported)");
+                }
+            };
+            
+            const handleShowPrompts = () => {
+                // --- 1. REPLICATE TEXT PROMPT LOGIC ---
+                let tone = "";
+                if (techLevel > 70) tone += " Technical/Specific."; else tone += " Simple/Accessible.";
+                
+                const contextLabel = contextsList.flatMap(g => g.options).find(o => o.id === contextStyle)?.label || "General";
+                const mediumObj = mediumsList.flatMap(g => g.options).find(o => o.id === mediumStyle);
+                const mediumLabel = mediumObj?.label || "Standard";
+                const mediumGroup = mediumsList.find(g => g.options.some(o => o.id === mediumStyle))?.group || "";
+                
+                const contextGroup = contextsList.find(g => g.options.some(o => o.id === contextStyle))?.group || "";
+                const isStudio = contextGroup.includes('Studio');
+                const isRealism = mediumGroup.includes('Photography') || mediumGroup.includes('Editorial');
+
+                let systemPrompt = "";
+                if (platform === 'meme') {
+                    const memeStyle = memeType === 'sarcastic' ? "SARCASTIC, IRONIC, RELATABLE (Viral Humor)" : "PROMOTIONAL, MARKETING, SALES (Call to Action)";
+                    systemPrompt = `You are a MEME creator. Style: ${memeStyle}.
+                    1. Write a short, punchy phrase (max 10-12 words) for the image overlay.
+                    2. Write 10 relevant hashtags.
+                    The text MUST relate to: Product "${prompt}".
+                    Context Details: "${contextDetails}".
+                    Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.
+                    Topic: "${prompt}". Language Output: ${lang === 'en' ? 'English' : 'Italian'}.`;
+                } else {
+                    const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
+                    let creativeInstruction = "";
+                    if (isRealism) {
+                        if (isStudio) {
+                             creativeInstruction = `Focus purely on the product '${prompt}' and its premium features. Write high-conversion marketing copy. Do not describe the background. Context Details: ${contextDetails}`;
+                        } else {
+                             creativeInstruction = `Focus on the product '${prompt}' and the lifestyle setting (${contextLabel}). Incorporate details: ${contextDetails}. Write high-conversion marketing copy.`;
+                        }
+                    } else {
+                         if (isStudio) {
+                             creativeInstruction = `Creatively merge the concept of the Product '${prompt}' and the ${mediumLabel} art style. Ignore the background setting.`;
+                        } else {
+                             creativeInstruction = `Creatively merge the concept of the Product '${prompt}', the ${contextLabel} setting, AND the ${mediumLabel} art style. Incorporate details: ${contextDetails}.`;
+                        }
+                    }
+
+                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${prompt}".
+                    ${creativeInstruction}
+                    Tone: ${tone}.
+                    Return a JSON object with exactly these keys:
+                    {
+                        "instagram": "Engaging caption with emojis and hashtags",
+                        "linkedin": "Professional, industry-focused post",
+                        "story": "Short punchy text for Instagram Story (max 15 words)"
+                    }
+                    ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
+                }
+
+                // --- 2. REPLICATE IMAGE PROMPT LOGIC ---
+                const contextPrompt = getPrompt(contextsList, contextStyle);
+                const mediumPrompt = getPrompt(mediumsList, mediumStyle);
+                
+                let subject = customDetails.trim() || prompt.trim() || "product";
+                if (subject.length > 50) subject = "the product described";
+
+                const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
+
+                let fullPrompt = "";
+                if (platform === 'meme') {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
+                } else {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
+                }
+                
+                let imageInstructions = "";
+                let indexCounter = 1;
+                if (productImg) { imageInstructions += `\n[Image ${indexCounter}]: Use as structural reference for the product.`; indexCounter++; }
+                if (logoImg) { 
+                    const targetIdx = productImg ? (indexCounter - 1) : "generated object";
+                    imageInstructions += `\n[Image ${indexCounter}]: Apply logo/texture onto surface of ${productImg ? `Image ${targetIdx}` : "the product"}.`; 
+                    indexCounter++; 
+                }
+                if (personImg) { imageInstructions += `\n[Image ${indexCounter}]: Include person as main subject.`; indexCounter++; }
+
+                setDebugPrompts({
+                    image: fullPrompt + imageInstructions,
+                    text: systemPrompt
+                });
+            };
+
+            // --- MEME COMPOSITOR ---
+            useEffect(() => {
+                const drawMeme = async () => {
+                    if (platform === 'meme' && images.length > 0 && memeText && canvasRef.current) {
+                        try { await document.fonts.ready; } catch(e) {}
+                        const currentRawImage = images[selectedImageIndex];
+                        if (!currentRawImage) return;
+                        const canvas = canvasRef.current;
+                        const ctx = canvas.getContext('2d');
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.onload = () => {
+                            const size = 1024;
+                            canvas.width = size; canvas.height = size;
+                            const scale = Math.max(size / img.width, size / img.height);
+                            const x = (size / 2) - (img.width / 2) * scale;
+                            const y = (size / 2) - (img.height / 2) * scale;
+                            ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                            const gradient = ctx.createLinearGradient(0, size - 400, 0, size);
+                            gradient.addColorStop(0, "rgba(0,0,0,0)");
+                            gradient.addColorStop(0.5, "rgba(0,0,0,0.3)");
+                            gradient.addColorStop(1, "rgba(0,0,0,0.8)");
+                            ctx.fillStyle = gradient; ctx.fillRect(0, size - 400, size, 400);
+                            const fontSize = 56;
+                            ctx.font = `900 ${fontSize}px "Oswald", "Impact", sans-serif`;
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+                            ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000';
+                            ctx.lineWidth = 6; ctx.shadowColor = "rgba(0,0,0,0.8)"; ctx.shadowBlur = 4; ctx.lineJoin = 'round';
+                            const text = memeText.toUpperCase();
+                            const maxWidth = size - 80;
+                            const words = text.split(' ');
+                            let lines = []; let currentLine = words[0];
+                            for (let i = 1; i < words.length; i++) {
+                                const width = ctx.measureText(currentLine + " " + words[i]).width;
+                                if (width < maxWidth) currentLine += " " + words[i];
+                                else { lines.push(currentLine); currentLine = words[i]; }
+                            }
+                            lines.push(currentLine);
+                            const lineHeight = fontSize * 1.2;
+                            const bottomPadding = 40;
+                            let startY = size - bottomPadding - ((lines.length - 1) * lineHeight);
+                            lines.forEach((line, index) => {
+                                 const lineY = startY + (index * lineHeight);
+                                 ctx.strokeText(line, size / 2, lineY);
+                                 ctx.fillText(line, size / 2, lineY);
+                            });
+                            setFinalMemeImage(canvas.toDataURL('image/png'));
+                        };
+                        img.src = currentRawImage;
+                    } else { setFinalMemeImage(null); }
+                };
+                drawMeme();
+            }, [images, selectedImageIndex, memeText, platform]);
+
+            // --- API HANDLERS ---
+            const handleProductUpload = async (e) => {
+                if(e.target.files[0]) { try { setProductImg(await resizeImage(e.target.files[0])); setProductMimeType(e.target.files[0].type); } catch(err){} }
+            };
+            const handleLogoUpload = async (e) => {
+                if(e.target.files[0]) { try { setLogoImg(await resizeImage(e.target.files[0])); setLogoMimeType(e.target.files[0].type); } catch(err){} }
+            };
+            const handlePersonUpload = async (e) => {
+                if(e.target.files[0]) { try { setPersonImg(await resizeImage(e.target.files[0])); setPersonMimeType(e.target.files[0].type); } catch(err){} }
+            };
+
+            const fetchCopyAndMeme = async (topic, ctxId, medId, ctxDetails) => {
+                let tone = "";
+                if (techLevel > 70) tone += " Technical/Specific."; else tone += " Simple/Accessible.";
+                
+                // CONTEXT FUSION LOGIC
+                const contextLabel = contextsList.flatMap(g => g.options).find(o => o.id === ctxId)?.label || "General";
+                const mediumObj = mediumsList.flatMap(g => g.options).find(o => o.id === medId);
+                const mediumLabel = mediumObj?.label || "Standard";
+                const mediumGroup = mediumsList.find(g => g.options.some(o => o.id === medId))?.group || "";
+                
+                const contextGroup = contextsList.find(g => g.options.some(o => o.id === ctxId))?.group || "";
+                const isStudio = contextGroup.includes('Studio');
+                const isRealism = mediumGroup.includes('Photography') || mediumGroup.includes('Editorial');
+
+                let systemPrompt = "";
+                if (platform === 'meme') {
+                    // MEME LOGIC
+                    const memeStyle = memeType === 'sarcastic' ? "SARCASTIC, IRONIC, RELATABLE (Viral Humor)" : "PROMOTIONAL, MARKETING, SALES (Call to Action)";
+                    systemPrompt = `You are a MEME creator. Style: ${memeStyle}.
+                    1. Write a short, punchy phrase (max 10-12 words) for the image overlay.
+                    2. Write 10 relevant hashtags.
+                    The text MUST relate to: Product "${topic}".
+                    Context Details: "${ctxDetails}".
+                    Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.
+                    Topic: "${topic}". Language Output: ${lang === 'en' ? 'English' : 'Italian'}.`;
+                } else {
+                    // BUNDLE LOGIC
+                    const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
+                    
+                    let creativeInstruction = "";
+                    if (isRealism) {
+                        if (isStudio) {
+                             creativeInstruction = `Focus purely on the product '${topic}' and its premium features. Write high-conversion marketing copy. Do not describe the background. Context Details: ${ctxDetails}`;
+                        } else {
+                             creativeInstruction = `Focus on the product '${topic}' and the lifestyle setting (${contextLabel}). Incorporate details: ${ctxDetails}. Write high-conversion marketing copy.`;
+                        }
+                    } else {
+                         if (isStudio) {
+                             creativeInstruction = `Creatively merge the concept of the Product '${topic}' and the ${mediumLabel} art style. Ignore the background setting.`;
+                        } else {
+                             creativeInstruction = `Creatively merge the concept of the Product '${topic}', the ${contextLabel} setting, AND the ${mediumLabel} art style. Incorporate details: ${ctxDetails}.`;
+                        }
+                    }
+
+                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${topic}".
+                    ${creativeInstruction}
+                    Tone: ${tone}.
+                    Return a JSON object with exactly these keys:
+                    {
+                        "instagram": "Engaging caption with emojis and hashtags",
+                        "linkedin": "Professional, industry-focused post",
+                        "story": "Short punchy text for Instagram Story (max 15 words)"
+                    }
+                    ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
+                }
+
+                try {
+                    const data = await fetchWithBackoff(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                        {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
+                        }
+                    );
+                    let textResult = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                    textResult = textResult.replace(/```json|```/g, '').trim();
+
+                    if (platform === 'meme') {
+                        const jsonMatch = textResult.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            try { const json = JSON.parse(jsonMatch[0]); return { copy: json.hashtags, memeText: json.meme_phrase, isBundle: false }; }
+                            catch(e) { return { copy: "#viral", memeText: "Top Product", isBundle: false }; }
+                        } else { return { copy: "#viral", memeText: "Top Product", isBundle: false }; }
+                    } else {
+                        // Bundle Parsing
+                         const jsonMatch = textResult.match(/\{[\s\S]*\}/);
+                         if (jsonMatch) {
+                            try {
+                                const json = JSON.parse(jsonMatch[0]);
+                                return { textOptions: json, isBundle: true, memeText: null };
+                            } catch(e) {
+                                return { textOptions: { instagram: textResult, linkedin: textResult, story: textResult }, isBundle: true, memeText: null };
+                            }
+                         }
+                         return { textOptions: { instagram: textResult, linkedin: textResult, story: textResult }, isBundle: true, memeText: null };
+                    }
+                } catch (e) { return { copy: "Error", memeText: "Error" }; }
+            };
+            
+            const handleRegenerateText = async () => {
+                if (!prompt.trim()) return;
+                setTextLoading(true);
+                try {
+                    const textData = await fetchCopyAndMeme(prompt, contextStyle, mediumStyle, contextDetails);
+                    if (textData.isBundle) {
+                        setTextOptions(textData.textOptions);
+                        setCopy(null);
+                    } else {
+                        setTextOptions(null);
+                        setCopy(textData.copy);
+                    }
+                    setMemeText(textData.memeText); 
+                } catch (e) {
+                    console.error("Text regeneration failed", e);
+                } finally {
+                    setTextLoading(false);
+                }
+            };
+
+            async function analyzeImageForPrompt(base64Data, mimeType, type) {
+                let instruction = "";
+                if (type === 'product') instruction = "Describe this product's shape, material, and color visually in 30 English words. Start with 'A product shaped like...'.";
+                else if (type === 'logo') instruction = "Describe this logo/label visually (colors, text, style) in 20 English words.";
+                else if (type === 'person') instruction = "Describe this person visually (age, gender, hair, expression) in 20 English words. Start with 'A [description] person...'.";
+
+                try {
+                    const response = await fetchWithBackoff(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                        {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ contents: [{ parts: [{ text: instruction }, { inlineData: { mimeType: mimeType || 'image/png', data: base64Data } }] }] })
+                        }
+                    );
+                    return response.candidates?.[0]?.content?.parts?.[0]?.text || null;
+                } catch (e) { return null; }
+            }
+
+            async function callImagen(modelName, prompt, count) {
+                 const response = await fetchWithBackoff(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${apiKey}`,
+                    {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ instances: [{ prompt: prompt }], parameters: { sampleCount: count, aspectRatio: "1:1" } })
+                    }
+                );
+                if (response && response.predictions && response.predictions[0]) return `data:image/png;base64,${response.predictions[0].bytesBase64Encoded}`;
+                return null;
+            }
+
+            const fetchImage = async (userPrompt, ctxId, medId, pImg, pType, lImg, lType, persImg, persType, details, ctxDetails, count) => {
+                const contextPrompt = getPrompt(contextsList, ctxId);
+                const mediumPrompt = getPrompt(mediumsList, medId);
+                
+                let subject = customDetails.trim() || userPrompt.trim() || "product";
+                if (subject.length > 50) subject = "the product described";
+
+                const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
+
+                let fullPrompt = "";
+                if (platform === 'meme') {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${ctxDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. COMPOSITION: Center weighted, clear for text overlay.`;
+                } else {
+                    fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${ctxDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
+                }
+                
+                const requests = Array(count).fill(null).map(async () => {
+                    try {
+                        const parts = [{ text: `PROMPT: ${fullPrompt}. TASK: Generate image matching the style and context.` }];
+                        // Dynamic Index Logic
+                        let indexCounter = 1;
+                        if (pImg) {
+                            parts.push({ inlineData: { mimeType: pType || 'image/png', data: pImg.split(',')[1] } });
+                            parts[0].text += ` Use Image ${indexCounter} as structural reference for the product.`;
+                            indexCounter++;
+                        }
+                        if (lImg) {
+                            parts.push({ inlineData: { mimeType: lType || 'image/png', data: lImg.split(',')[1] } });
+                            const targetIdx = pImg ? (indexCounter - 1) : "generated object";
+                            parts[0].text += ` Apply the logo from Image ${indexCounter} onto the surface of ${pImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
+                            indexCounter++;
+                        }
+                        if (persImg) {
+                            parts.push({ inlineData: { mimeType: persType || 'image/png', data: persImg.split(',')[1] } });
+                            parts[0].text += ` Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
+                            indexCounter++;
+                        }
+
+                        const data = await fetchWithBackoff(
+                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+                            {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { responseModalities: ['IMAGE'] }, safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }] })
+                            }
+                        );
+                        const img = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                        if (img) return `data:image/png;base64,${img}`;
+                        return null;
+                    } catch (e) { return null; }
+                });
+
+                const results = await Promise.all(requests);
+                const validImages = results.filter(img => img !== null);
+                if (validImages.length > 0) return { images: validImages, warning: null };
+
+                // FALLBACK
+                let warning = "Flash Image Occupied. Standard Fallback.";
+                let fallbackPrompt = fullPrompt;
+                if (pImg) { const pDesc = await analyzeImageForPrompt(pImg.split(',')[1], pType, 'product'); if (pDesc) fallbackPrompt += ` SHAPE: ${pDesc}.`; }
+                if (lImg) { const lDesc = await analyzeImageForPrompt(lImg.split(',')[1], lType, 'logo'); if (lDesc) fallbackPrompt += ` LOGO: ${lDesc}.`; }
+                if (persImg) { const persDesc = await analyzeImageForPrompt(persImg.split(',')[1], persType, 'person'); if (persDesc) fallbackPrompt += ` PERSON: ${persDesc}.`; }
+                
+                if(pImg || lImg || persImg) warning = t.warnEdit;
+
+                try { 
+                    const imagenRequests = Array(count).fill(null).map(async () => {
+                         try { return await callImagen('imagen-3.0-generate-001', fallbackPrompt, 1); } catch(e) { return null; }
+                    });
+                    const imagenResults = await Promise.all(imagenRequests);
+                    const validImagenImages = imagenResults.filter(img => img !== null);
+                    if (validImagenImages.length > 0) return { images: validImagenImages, warning: warning };
+                } catch (e) {}
+                
+                throw new Error(t.errGen);
+            };
+
+            const generateContent = async () => {
+                if (!apiKey) {
+                    alert(t.apiKeyMissing);
+                    return;
+                }
+                if (!prompt.trim()) return;
+                setLoading(true); setError(null); setWarningMsg(null); setImages([]); setFinalMemeImage(null);
+                
+                try {
+                    setLoadingStep(t.processing);
+                    const [textData, imgResult] = await Promise.all([
+                        fetchCopyAndMeme(prompt, contextStyle, mediumStyle, contextDetails), 
+                        fetchImage(prompt, contextStyle, mediumStyle, productImg, productMimeType, logoImg, logoMimeType, personImg, personMimeType, customDetails, contextDetails, batchSize)
+                    ]);
+                    
+                    if (textData.isBundle) {
+                        setTextOptions(textData.textOptions);
+                        setCopy(null);
+                    } else {
+                        setTextOptions(null);
+                        setCopy(textData.copy);
+                    }
+                    
+                    setMemeText(textData.memeText); 
+                    if (imgResult && imgResult.images) { setImages(imgResult.images); setWarningMsg(imgResult.warning); }
+                    setSelectedImageIndex(0);
+                } catch (err) { setError("Error: " + err.message); } 
+                finally { setLoading(false); setLoadingStep(''); }
+            };
+
+            const handleShare = async () => {
+                const imageToShare = (platform === 'meme' && finalMemeImage) ? finalMemeImage : images[selectedImageIndex];
+                const textToShare = textOptions ? textOptions[activeTab] : copy;
+
+                if (!imageToShare) return;
+                try {
+                    const blob = dataURItoBlob(imageToShare);
+                    const file = new File([blob], "post.png", { type: "image/png" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: 'SocialStudio', text: textToShare });
+                    else downloadImage();
+                } catch (e) { downloadImage(); }
+            };
+
+            const downloadImage = () => {
+                const imageToShare = (platform === 'meme' && finalMemeImage) ? finalMemeImage : images[selectedImageIndex];
+                if (!imageToShare) return;
+                const link = document.createElement('a');
+                link.href = imageToShare; link.download = `post_${Date.now()}.png`;
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+            return (
+                <div className={`min-h-screen font-serif transition-colors duration-300 ${theme.bg} ${theme.text}`}>
+                    <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                    <header className={`${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-wine-100'} border-b sticky top-0 z-20 shadow-sm transition-colors duration-300`}>
+                        <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-wine-900 p-2.5 rounded-full shadow-md text-white"><Icons.Briefcase className="w-6 h-6" /></div>
+                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v31.1 (API Guard)</p></div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setLang(lang === 'it' ? 'en' : 'it')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Globe className="w-3.5 h-3.5" /> {lang === 'it' ? 'IT' : 'EN'}</button>
+                                <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 text-yellow-400 hover:bg-stone-700' : 'bg-wine-50 text-wine-900 hover:bg-wine-100'}`}>{darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}</button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-4xl mx-auto px-4 py-8 space-y-8 pb-32">
+                        <div className={`rounded-3xl shadow-xl overflow-hidden border transition-colors duration-300 ${theme.card}`}>
+                            <div className="p-8 space-y-8">
+                                <div className="space-y-3">
+                                    <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}>{t.topicLabel}</label>
+                                    <textarea rows={2} className={`w-full px-5 py-4 rounded-2xl border-2 focus:ring-0 outline-none transition-all resize-none text-xl font-medium placeholder:text-opacity-50 ${theme.inputBg} focus:border-wine-800 placeholder-stone-400`} placeholder={t.topicPlaceholder} value={prompt} onChange={(e) => setPrompt(e.target.value)} maxLength={200} />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className={`block text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-2 ${theme.subtext}`}><Icons.PenTool className="w-3.5 h-3.5" /> {t.detailsLabel}</label>
+                                    <textarea rows={1} className={`w-full px-5 py-3 rounded-2xl border focus:ring-0 outline-none transition-all resize-none text-base ${theme.inputBg} ${darkMode ? 'border-stone-600 focus:border-wine-500' : 'border-stone-200 focus:border-wine-800'} placeholder-stone-400`} placeholder={t.detailsPlaceholder} value={customDetails} onChange={(e) => setCustomDetails(e.target.value)} />
+                                </div>
+                                <div className="space-y-3">
+                                    <label className={`block text-xs font-sans font-bold uppercase tracking-wider flex items-center gap-2 ${theme.subtext}`}><Icons.Layout className="w-3.5 h-3.5" /> {t.ctxDetailsLabel}</label>
+                                    <textarea rows={1} className={`w-full px-5 py-3 rounded-2xl border focus:ring-0 outline-none transition-all resize-none text-base ${theme.inputBg} ${darkMode ? 'border-stone-600 focus:border-wine-500' : 'border-stone-200 focus:border-wine-800'} placeholder-stone-400`} placeholder={t.ctxDetailsPlaceholder} value={contextDetails} onChange={(e) => setContextDetails(e.target.value)} />
+                                </div>
+                                
+                                {/* PLATFORM SELECTOR - SIMPLIFIED */}
+                                <div className="space-y-2">
+                                    <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}>{t.platformLabel}</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button onClick={() => setPlatform('bundle')} className={`py-3 rounded-xl border flex flex-col sm:flex-row items-center justify-center gap-2 transition-all ${platform === 'bundle' ? 'bg-gradient-to-r from-stone-700 to-stone-900 text-white border-transparent shadow-md' : `${theme.inputBg} hover:opacity-80`}`}><Icons.Instagram className="w-5 h-5" /> <span className="text-sm font-bold">Social Media Bundle</span></button>
+                                        <button onClick={() => setPlatform('meme')} className={`py-3 rounded-xl border flex flex-col sm:flex-row items-center justify-center gap-2 transition-all ${platform === 'meme' ? 'bg-black text-white border-transparent shadow-md ring-2 ring-yellow-400' : `${theme.inputBg} hover:opacity-80`}`}><Icons.MemeFace className="w-5 h-5" /> <span className="text-sm font-bold">Meme Generator</span></button>
+                                    </div>
+                                    {platform === 'meme' && (
+                                        <div className="grid grid-cols-2 gap-2 mt-2 fade-in">
+                                            <button onClick={() => setMemeType('sarcastic')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${memeType === 'sarcastic' ? 'bg-wine-900 text-white border-wine-900' : `${theme.inputBg} opacity-70`}`}>{t.memeSarcastic}</button>
+                                            <button onClick={() => setMemeType('marketing')} className={`py-2 rounded-lg text-xs font-bold border transition-all ${memeType === 'marketing' ? 'bg-wine-900 text-white border-wine-900' : `${theme.inputBg} opacity-70`}`}>{t.memeMarketing}</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {platform !== 'meme' && (
+                                    <div className={`grid md:grid-cols-2 gap-8 p-6 rounded-2xl border fade-in ${darkMode ? 'bg-stone-900/50 border-stone-700' : 'bg-wine-50 border-wine-100'}`}>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center font-sans"><label className={`text-xs font-bold uppercase tracking-wide flex items-center gap-2 ${darkMode ? 'text-wine-400' : 'text-wine-900'}`}> <Icons.Droplets className="w-4 h-4" /> {t.techLabel} </label><span className={`text-xs font-black px-2 py-1 rounded shadow-sm ${darkMode ? 'bg-stone-800 text-stone-300' : 'bg-white text-wine-900'}`}> {getTechLabel()} </span></div>
+                                            <input type="range" min="0" max="100" value={techLevel} onChange={(e) => setTechLevel(Number(e.target.value))} className="w-full h-1.5 bg-stone-300 rounded-lg appearance-none cursor-pointer accent-wine-900 dark:accent-wine-500"/>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center font-sans"><label className="text-xs font-bold text-yellow-500 uppercase tracking-wide flex items-center gap-2"> <Icons.Sparkles className="w-4 h-4" /> {t.vibeLabel} </label><span className={`text-xs font-black px-2 py-1 rounded shadow-sm ${darkMode ? 'bg-stone-800 text-stone-300' : 'bg-white text-stone-600'}`}> {getLuxuryLabel()} </span></div>
+                                            <input type="range" min="0" max="100" value={luxuryLevel} onChange={(e) => setLuxuryLevel(Number(e.target.value))} className="w-full h-1.5 bg-stone-300 rounded-lg appearance-none cursor-pointer accent-yellow-500"/>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* STYLE MATRIX SELECTORS */}
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}> {t.contextLabel} </label>
+                                        <div className="relative">
+                                            <select value={contextStyle} onChange={(e) => setContextStyle(e.target.value)} className={`w-full appearance-none py-3 px-4 pr-8 rounded-xl border focus:outline-none focus:border-wine-800 font-medium cursor-pointer ${theme.inputBg}`}>
+                                                {contextsList.map((group) => ( <optgroup key={group.group} label={group.group}> {group.options.map((opt) => ( <option key={opt.id} value={opt.id}> {opt.emoji} {opt.label} </option> ))} </optgroup> ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-stone-500"> <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg> </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext} flex items-center gap-2`}> <Icons.Palette className="w-3 h-3" /> {t.mediumLabel} </label>
+                                        <div className="relative">
+                                            <select value={mediumStyle} onChange={(e) => setMediumStyle(e.target.value)} className={`w-full appearance-none py-3 px-4 pr-8 rounded-xl border focus:outline-none focus:border-wine-800 font-medium cursor-pointer ${theme.inputBg}`}>
+                                                {mediumsList.map((group) => ( <optgroup key={group.group} label={group.group}> {group.options.map((opt) => ( <option key={opt.id} value={opt.id}> {opt.emoji} {opt.label} </option> ))} </optgroup> ))}
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-stone-500"> <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg> </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {/* VARIANT COUNT */}
+                                <div className="space-y-2 pt-2 border-t border-stone-800">
+                                   <label className={`block text-xs font-sans font-bold uppercase tracking-wider ${theme.subtext}`}>{t.genModeLabel}</label>
+                                   <div className="flex gap-2">
+                                       <button onClick={() => setBatchSize(1)} className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${batchSize === 1 ? 'bg-wine-900 text-white border-wine-900' : `${theme.inputBg} opacity-70`}`}>{t.singleGen}</button>
+                                       <button onClick={() => setBatchSize(4)} className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${batchSize === 4 ? 'bg-wine-900 text-white border-wine-900' : `${theme.inputBg} opacity-70`}`}>{t.batchGen}</button>
+                                   </div>
+                                </div>
+
+                                {/* TRI-ASSET UPLOAD */}
+                                <div className={`pt-4 border-t ${darkMode ? 'border-stone-700' : 'border-wine-50'}`}>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        <div className="space-y-2">
+                                            <label className={`block text-[10px] font-sans font-bold uppercase tracking-wider ${theme.subtext} truncate`}> {t.productUpload} </label>
+                                            <input type="file" ref={productInputRef} onChange={handleProductUpload} accept="image/*" className="hidden" />
+                                            <button onClick={() => productInputRef.current.click()} className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl border-2 border-dashed transition-all w-full ${darkMode ? 'border-stone-600 hover:border-wine-500 hover:bg-stone-800 text-stone-300' : 'border-wine-200 hover:border-wine-800 hover:bg-wine-50 text-stone-600'}`}><Icons.Box className="w-4 h-4" /> <span className="font-medium text-[10px]">{productImg ? t.replaceBtn : t.uploadBtn}</span></button>
+                                            {productImg && <div className="h-8 w-full border rounded bg-white p-0.5 shadow-sm relative mt-1"><img src={productImg} className="h-full w-full object-contain" /><button onClick={() => { setProductImg(null); productInputRef.current.value = ""; }} className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"><Icons.X className="w-2 h-2"/></button></div>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className={`block text-[10px] font-sans font-bold uppercase tracking-wider ${theme.subtext} truncate`}> {t.logoUpload} </label>
+                                            <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+                                            <button onClick={() => logoInputRef.current.click()} className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl border-2 border-dashed transition-all w-full ${darkMode ? 'border-stone-600 hover:border-wine-500 hover:bg-stone-800 text-stone-300' : 'border-wine-200 hover:border-wine-800 hover:bg-wine-50 text-stone-600'}`}><Icons.Tag className="w-4 h-4" /> <span className="font-medium text-[10px]">{logoImg ? t.replaceBtn : t.uploadBtn}</span></button>
+                                            {logoImg && <div className="h-8 w-full border rounded bg-white p-0.5 shadow-sm relative mt-1"><img src={logoImg} className="h-full w-full object-contain" /><button onClick={() => { setLogoImg(null); logoInputRef.current.value = ""; }} className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"><Icons.X className="w-2 h-2"/></button></div>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className={`block text-[10px] font-sans font-bold uppercase tracking-wider ${theme.subtext} truncate`}> {t.personUpload} </label>
+                                            <input type="file" ref={personInputRef} onChange={handlePersonUpload} accept="image/*" className="hidden" />
+                                            <button onClick={() => personInputRef.current.click()} className={`flex flex-col items-center justify-center gap-1 h-14 rounded-xl border-2 border-dashed transition-all w-full ${darkMode ? 'border-stone-600 hover:border-wine-500 hover:bg-stone-800 text-stone-300' : 'border-wine-200 hover:border-wine-800 hover:bg-wine-50 text-stone-600'}`}><Icons.User className="w-4 h-4" /> <span className="font-medium text-[10px]">{personImg ? t.replaceBtn : t.uploadBtn}</span></button>
+                                            {personImg && <div className="h-8 w-full border rounded bg-white p-0.5 shadow-sm relative mt-1"><img src={personImg} className="h-full w-full object-contain" /><button onClick={() => { setPersonImg(null); personInputRef.current.value = ""; }} className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-0.5"><Icons.X className="w-2 h-2"/></button></div>}
+                                        </div>
+                                    </div>
+                                    {(productImg || logoImg || personImg) && <p className={`text-[10px] mt-2 ${darkMode ? 'text-stone-500' : 'text-stone-400'}`}>{t.nanoInfo}</p>}
+                                </div>
+
+                                <div className="flex flex-col gap-2">
+                                    <button onClick={generateContent} disabled={loading || !prompt.trim()} className={`w-full py-4 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-bold text-lg shadow-xl transition-all active:scale-[0.98] ${loading ? 'bg-stone-200 text-stone-400 cursor-not-allowed dark:bg-stone-800 dark:text-stone-600' : 'bg-wine-900 text-white hover:bg-wine-800 shadow-wine-900/20 dark:bg-wine-700 dark:hover:bg-wine-600'}`}>
+                                        {loading ? ( <> <div className="animate-spin"><Icons.RefreshCw className="w-6 h-6" /></div> {loadingStep || t.processing} </> ) : ( <> <Icons.Wand2 className="w-6 h-6" /> {t.genBtn} {platform === 'meme' ? 'Meme' : 'Bundle'} </> )}
+                                    </button>
+                                    
+                                    <button onClick={handleManualShare} className={`w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-medium text-sm transition-all hover:bg-opacity-80 border ${darkMode ? 'border-stone-700 text-stone-400 hover:bg-stone-800' : 'border-stone-300 text-stone-600 hover:bg-stone-100'}`}>
+                                        <Icons.Send className="w-4 h-4" /> {t.manualShareBtn}
+                                    </button>
+
+                                    <button onClick={handleShowPrompts} className={`w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-medium text-sm transition-all hover:bg-opacity-80 border border-dashed ${darkMode ? 'border-stone-600 text-stone-500 hover:border-stone-400 hover:text-stone-300' : 'border-stone-400 text-stone-500 hover:border-stone-600 hover:text-stone-700'}`}>
+                                        <Icons.Code className="w-4 h-4" /> {t.genPromptsBtn}
+                                    </button>
+                                </div>
+                                
+                                {debugPrompts && (
+                                    <div className={`mt-4 p-4 rounded-xl border ${darkMode ? 'bg-stone-950 border-stone-800' : 'bg-stone-100 border-stone-200'} space-y-4 fade-in`}>
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <label className={`text-[10px] font-bold uppercase tracking-wider ${theme.subtext}`}>{t.promptImgLabel}</label>
+                                                <button onClick={() => copyToClipboard(debugPrompts.image)} className="text-[10px] underline hover:text-wine-500">{t.copyBtn}</button>
+                                            </div>
+                                            <textarea readOnly rows={4} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.image} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <label className={`text-[10px] font-bold uppercase tracking-wider ${theme.subtext}`}>{t.promptTxtLabel}</label>
+                                                <button onClick={() => copyToClipboard(debugPrompts.text)} className="text-[10px] underline hover:text-wine-500">{t.copyBtn}</button>
+                                            </div>
+                                            <textarea readOnly rows={4} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.text} />
+                                        </div>
+                                        <div className="flex justify-end">
+                                            <button onClick={() => setDebugPrompts(null)} className="text-xs text-red-500 hover:underline">Close Debug</button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {loading && (
+                                <div className={`px-6 py-4 border-t font-sans ${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-wine-50 border-wine-100'}`}>
+                                    <div className={`grid gap-4 ${batchSize === 1 ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-2'}`}> 
+                                        {Array(batchSize).fill(null).map((_, i) => <div key={i} className="aspect-square rounded-xl shimmer bg-gray-200 dark:bg-stone-800 animate-pulse"></div>)} 
+                                    </div>
+                                    <div className={`mt-4 flex items-center gap-3 text-sm font-medium animate-pulse ${darkMode ? 'text-wine-400' : 'text-wine-900'}`}> <Icons.Wine className="w-5 h-5" /> {loadingMsg} </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {error && ( <div className="border border-red-200 bg-red-50 text-red-700 rounded-xl p-4 font-sans font-medium"> {error} </div> )}
+
+                        {images.length > 0 && !loading && (
+                            <div className="grid md:grid-cols-2 gap-8 fade-in">
+                                <div className="space-y-4">
+                                    <h3 className={`text-lg font-bold font-sans ${darkMode ? 'text-white' : 'text-wine-900'}`}>{platform === 'meme' ? 'Meme (Instagram Ready)' : t.resultTitle}</h3>
+                                    <div className={`rounded-2xl shadow-2xl overflow-hidden border group relative flex items-center justify-center bg-stone-900/50 ${darkMode ? 'border-stone-700' : 'border-wine-100'}`}>
+                                        <img src={(platform === 'meme' && finalMemeImage) ? finalMemeImage : images[selectedImageIndex]} alt="Generated" className="w-full h-auto object-contain aspect-square" />
+                                        <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                             <button onClick={handleShare} className="bg-wine-600 text-white p-3 rounded-full shadow-lg hover:bg-wine-700"> <Icons.Share2 className="w-5 h-5" /> </button>
+                                            <button onClick={downloadImage} className="bg-white text-stone-800 p-3 rounded-full shadow-lg hover:bg-wine-50"> <Icons.Download className="w-5 h-5" /> </button>
+                                        </div>
+                                        {warningMsg && <div className="absolute top-4 left-4 right-4 bg-orange-100 border border-orange-200 text-orange-800 text-xs px-3 py-2 rounded-lg font-sans font-bold flex items-center gap-2 shadow-sm animate-pulse"><Icons.AlertTriangle className="w-4 h-4" /> {warningMsg}</div>}
+                                    </div>
+                                    {images.length > 1 && (
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {images.map((img, idx) => (
+                                                <div key={idx} onClick={() => setSelectedImageIndex(idx)} className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${selectedImageIndex === idx ? 'border-wine-600 ring-2 ring-wine-200' : 'border-transparent opacity-70 hover:opacity-100'}`}><img src={img} className="w-full h-full object-cover aspect-square" /></div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* COPY SECTION (TABBED OR SINGLE) */}
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <h3 className={`text-lg font-bold font-sans ${darkMode ? 'text-white' : 'text-wine-900'}`}> {platform === 'meme' ? 'Hashtags Social' : t.copyTitle} </h3>
+                                        {!textOptions && platform !== 'meme' && (
+                                            <button onClick={handleRegenerateText} disabled={textLoading} className={`text-xs px-3 py-1.5 rounded-lg border font-bold transition-all flex items-center gap-2 ${darkMode ? 'border-stone-600 hover:bg-stone-700 text-stone-400' : 'border-stone-300 hover:bg-stone-100 text-stone-600'}`}>
+                                                {textLoading ? <div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full"/> : <Icons.RefreshCw className="w-3 h-3"/>}
+                                                {t.regenTextBtn}
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    <div className={`p-6 rounded-2xl shadow-lg border relative min-h-[200px] ${darkMode ? 'bg-stone-800 border-stone-700' : 'bg-white border-wine-100'}`}>
+                                        
+                                        {textOptions ? (
+                                            <div className="flex flex-col h-full">
+                                                <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-2">
+                                                    <div className="flex gap-2">
+                                                        {['instagram', 'linkedin', 'story'].map(tab => (
+                                                            <button 
+                                                                key={tab}
+                                                                onClick={() => setActiveTab(tab)}
+                                                                className={`text-xs font-bold px-3 py-1 rounded-full transition-all ${activeTab === tab ? 'bg-wine-600 text-white' : 'text-stone-500 hover:text-stone-300'}`}
+                                                            >
+                                                                {t.tabs[tab.substr(0,2)] || tab}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <button onClick={handleRegenerateText} disabled={textLoading} className={`text-xs p-1.5 rounded-lg hover:bg-white/10 transition-colors ${textLoading ? 'opacity-50' : ''}`} title={t.regenTextBtn}>
+                                                        {textLoading ? <div className="animate-spin h-4 w-4 border-2 border-stone-400 border-t-transparent rounded-full"/> : <Icons.RefreshCw className="w-4 h-4 text-stone-400"/>}
+                                                    </button>
+                                                </div>
+                                                <div className={`whitespace-pre-wrap leading-relaxed font-sans text-sm ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}>
+                                                    {textOptions[activeTab]}
+                                                </div>
+                                                <button onClick={() => copyToClipboard(textOptions[activeTab])} className={`mt-4 ml-auto text-xs px-3 py-1.5 rounded-lg font-bold font-sans transition-colors flex items-center gap-2 w-fit ${darkMode ? 'bg-stone-700 hover:bg-stone-600 text-stone-200' : 'bg-stone-100 hover:bg-stone-200 text-stone-600'}`}> <Icons.Copy className="w-3 h-3"/> {t.copyBtn} </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                            <div className={`whitespace-pre-wrap leading-relaxed font-sans text-sm ${darkMode ? 'text-stone-300' : 'text-stone-700'}`}> {copy} </div>
+                                            {copy && ( <button onClick={() => copyToClipboard(copy)} className={`absolute bottom-4 right-4 text-xs px-3 py-1.5 rounded-lg font-bold font-sans transition-colors flex items-center gap-2 ${darkMode ? 'bg-stone-700 hover:bg-stone-600 text-stone-200' : 'bg-stone-100 hover:bg-stone-200 text-stone-600'}`}> {t.copyBtn} </button> )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
