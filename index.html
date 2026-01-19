@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - Key Manager v32.0</title>
+    <title>SocialStudio AI - Key Manager v32.1 (Patched)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -707,8 +707,9 @@
                 return new Blob([ab], { type: mimeString });
             };
             
+            // --- UPDATED MANUAL SHARE ---
             const handleManualShare = async () => {
-                // 1. Construct Prompt (reusing logic)
+                // 1. Construct Base Prompt
                 const contextPrompt = getPrompt(contextsList, contextStyle);
                 const mediumPrompt = getPrompt(mediumsList, mediumStyle);
                 let subject = customDetails.trim() || prompt.trim() || "product";
@@ -722,48 +723,42 @@
                     fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. SPECIFIC SCENE DETAILS: ${contextDetails}. ART STYLE/MEDIUM: ${mediumPrompt}. QUALITY: 8k, highly detailed.`;
                 }
 
-                // Explicit Instruction for External AIs
+                // 2. Add High-Fidelity Image Instructions
                 let finalManualPrompt = `** GENERATE IMAGE **\n\nPROMPT: ${fullPrompt}`;
-
                 let indexCounter = 1;
                 const filesToShare = [];
                 
                 if (productImg) {
                     filesToShare.push(new File([dataURItoBlob(productImg)], "input_product.jpg", { type: productMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Use Image ${indexCounter} as structural reference for the product.`;
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Use as structural reference for the product.`;
                     indexCounter++;
                 }
                 if (logoImg) {
                     filesToShare.push(new File([dataURItoBlob(logoImg)], "input_logo.png", { type: logoMimeType || 'image/png' }));
-                    const targetIdx = productImg ? (indexCounter - 1) : "generated object";
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Apply the logo from Image ${indexCounter} onto the surface of ${productImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
+                    const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Apply the logo/texture from this image onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`;
                     indexCounter++;
                 }
                 if (personImg) {
                     filesToShare.push(new File([dataURItoBlob(personImg)], "input_person.jpg", { type: personMimeType || 'image/jpeg' }));
-                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`;
+                    finalManualPrompt += `\n\n[Image ${indexCounter}]: Include this person in the scene as the main subject interacting with the product.`;
                     indexCounter++;
                 }
 
-                // 2. Copy to clipboard
+                // 3. Copy & Share Logic
                 await copyToClipboard(finalManualPrompt);
 
-                // 3. Share
                 if (navigator.share) {
                     try {
                         const shareData = {
                             title: 'SocialStudio Prompt',
                             text: finalManualPrompt
                         };
-                        
-                        // Only add files if they exist and are supported
                         if (filesToShare.length > 0 && navigator.canShare && navigator.canShare({ files: filesToShare })) {
                             shareData.files = filesToShare;
                         }
-
                         await navigator.share(shareData);
                     } catch (error) {
-                        console.error('Error sharing:', error);
                         if (error.name !== 'AbortError') {
                             setToast({ message: lang === 'it' ? "Prompt copiato!" : "Prompt copied!", type: 'success' });
                         }
@@ -773,6 +768,7 @@
                 }
             };
             
+            // --- UPDATED DEBUG PROMPTS ---
             const handleShowPrompts = () => {
                 // --- 1. REPLICATE TEXT PROMPT LOGIC ---
                 let tone = "";
@@ -826,7 +822,7 @@
                     ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
                 }
 
-                // --- 2. REPLICATE IMAGE PROMPT LOGIC ---
+                // --- 2. REPLICATE IMAGE PROMPT LOGIC (UPDATED) ---
                 const contextPrompt = getPrompt(contextsList, contextStyle);
                 const mediumPrompt = getPrompt(mediumsList, mediumStyle);
                 
@@ -844,13 +840,20 @@
                 
                 let imageInstructions = "";
                 let indexCounter = 1;
-                if (productImg) { imageInstructions += `\n[Image ${indexCounter}]: Use Image ${indexCounter} as structural reference for the product.`; indexCounter++; }
-                if (logoImg) { 
-                    const targetIdx = productImg ? (indexCounter - 1) : "generated object";
-                    imageInstructions += `\n[Image ${indexCounter}]: Apply the logo from Image ${indexCounter} onto the surface of ${productImg ? `Image ${targetIdx}` : "the product"}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
+                
+                if (productImg) { 
+                    imageInstructions += `\n[Image ${indexCounter}]: Use as structural reference for the product.`; 
                     indexCounter++; 
                 }
-                if (personImg) { imageInstructions += `\n[Image ${indexCounter}]: Include the person from Image ${indexCounter} in the scene as the main subject interacting with the product.`; indexCounter++; }
+                if (logoImg) { 
+                    const targetIdx = productImg ? (indexCounter - 1) : "the generated object";
+                    imageInstructions += `\n[Image ${indexCounter}]: Apply the logo from this image onto the surface of Image ${targetIdx}. MAINTAIN LOGO FIDELITY AND LEGIBLE TEXT.`; 
+                    indexCounter++; 
+                }
+                if (personImg) { 
+                    imageInstructions += `\n[Image ${indexCounter}]: Include person from this image as main subject interacting with the product.`; 
+                    indexCounter++; 
+                }
 
                 setDebugPrompts({
                     image: fullPrompt + imageInstructions,
