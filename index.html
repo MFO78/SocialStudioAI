@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - API Guard v31.1</title>
+    <title>SocialStudio AI - Key Manager v32.0</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -111,13 +111,11 @@
             Layout: (props) => <Icon {...props} path={<><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></>} />,
             Layers: (props) => <Icon {...props} path={<><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>} />,
             Send: (props) => <Icon {...props} path={<><line x1="22" x2="11" y1="2" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>} />,
-            Code: (props) => <Icon {...props} path={<><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>} />
+            Code: (props) => <Icon {...props} path={<><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></>} />,
+            Settings: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />
         };
 
-        // --- API & CONSTANTS ---
-        const apiKey = ""; 
-        
-        // --- RESTORED CONTEXTS (WHERE / WHAT) ---
+        // --- CONTEXT LIST (THE SETTING/SUBJECT) ---
         const contextsList = [
              { group: '🔳 Studio & Product Focus', options: [
                 { id: 'pure_white', emoji: '⬜', label: 'Pure White', prompt: '{{SUBJECT}} centered on a seamless pure white background, soft studio lighting, faint shadow, e-commerce style, no other objects.' },
@@ -248,7 +246,7 @@
             ]}
         ];
 
-        // --- RESTORED MEDIUMS (THE HOW) - RESTORED V18.1 CONTENT ---
+        // --- RESTORED MEDIUMS (THE HOW) ---
         const mediumsList = [
             { group: '📸 Photography Styles', options: [
                 { id: 'photorealistic', emoji: '📷', label: 'Photorealistic', prompt: 'High-resolution professional photography, 8k, realistic textures, balanced lighting, sharp focus.' },
@@ -397,6 +395,13 @@
                 memeToneLabel: "Tono Meme",
                 memeSarcastic: "Ironico / Sarcastico",
                 memeMarketing: "Marketing / Promo",
+                settingsTitle: "Impostazioni",
+                apiKeyLabel: "Google Gemini API Key",
+                apiKeyPlaceholder: "Incolla qui la tua chiave...",
+                save: "Salva",
+                close: "Chiudi",
+                keySaved: "Chiave salvata!",
+                keyRemoved: "Chiave rimossa!",
                 loadingMsgs: [
                     "Analizzando il brand...", "Allestendo il set...", "Regolando le luci...", 
                     "Cercando l'angolazione...", "Renderizzando...", "Ottimizzando..."
@@ -404,7 +409,7 @@
                 warnEdit: "Asset simulato stilisticamente (Modello editing non disponibile)",
                 warnIgnore: "Asset ignorato (Modello non disponibile)",
                 errGen: "Errore Generazione (Riprova).",
-                apiKeyMissing: "API Key mancante! Configurala nel codice sorgente o utilizza il tasto 'Condividi Input' per generare il prompt manualmente.",
+                apiKeyMissing: "API Key mancante! Configurala nelle impostazioni.",
                 tabs: { ig: "Instagram", li: "LinkedIn", story: "Stories" },
                 genModeLabel: "Modalità Generazione",
                 singleGen: "Singola (Veloce)",
@@ -443,6 +448,13 @@
                 memeToneLabel: "Meme Tone",
                 memeSarcastic: "Sarcastic / Ironic",
                 memeMarketing: "Marketing / Promo",
+                settingsTitle: "Settings",
+                apiKeyLabel: "Google Gemini API Key",
+                apiKeyPlaceholder: "Paste your key here...",
+                save: "Save",
+                close: "Close",
+                keySaved: "Key saved!",
+                keyRemoved: "Key removed!",
                 loadingMsgs: [
                     "Analyzing brand...", "Setting stage...", "Adjusting lights...", 
                     "Finding angle...", "Rendering...", "Optimizing..."
@@ -450,7 +462,7 @@
                 warnEdit: "Asset stylistically simulated (Editing unavailable)",
                 warnIgnore: "Asset ignored (Model unavailable)",
                 errGen: "Generation Error (Retry).",
-                apiKeyMissing: "Missing API Key! Configure it in the source code or use the 'Share Inputs' button to generate the prompt manually.",
+                apiKeyMissing: "Missing API Key! Please configure it in settings.",
                 tabs: { ig: "Instagram", li: "LinkedIn", story: "Stories" },
                 genModeLabel: "Generation Mode",
                 singleGen: "Single (Fast)",
@@ -472,6 +484,67 @@
                 return fetchWithBackoff(url, options, retries - 1, delay * 2);
             }
         }
+
+        // --- TOAST COMPONENT ---
+        const Toast = ({ message, type, onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            const bgClass = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            
+            return (
+                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-white font-medium shadow-xl flex items-center gap-3 animate-bounce ${bgClass}`}>
+                    <span>{message}</span>
+                    <button onClick={onClose} className="hover:opacity-70"><Icons.X className="w-4 h-4"/></button>
+                </div>
+            );
+        };
+
+        // --- SETTINGS MODAL COMPONENT ---
+        const SettingsModal = ({ isOpen, onClose, t, onSave }) => {
+            const [keyInput, setKeyInput] = useState('');
+
+            useEffect(() => {
+                if (isOpen) {
+                    setKeyInput(localStorage.getItem('vinosocial_api_key') || '');
+                }
+            }, [isOpen]);
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-stone-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-stone-200 dark:border-stone-800">
+                        <div className="p-6 space-y-4">
+                            <h3 className="text-xl font-bold text-stone-900 dark:text-white flex items-center gap-2">
+                                <Icons.Settings className="w-6 h-6" /> {t.settingsTitle}
+                            </h3>
+                            <div className="space-y-2">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-stone-500">{t.apiKeyLabel}</label>
+                                <input 
+                                    type="password" 
+                                    value={keyInput}
+                                    onChange={(e) => setKeyInput(e.target.value)}
+                                    placeholder={t.apiKeyPlaceholder}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-stone-200 dark:border-stone-700 bg-transparent dark:text-white focus:border-wine-600 outline-none transition-all font-mono text-sm"
+                                />
+                                <p className="text-[10px] text-stone-500">Key is stored locally in your browser.</p>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button onClick={onClose} className="flex-1 py-3 rounded-xl font-bold text-stone-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors">
+                                    {t.close}
+                                </button>
+                                <button onClick={() => onSave(keyInput)} className="flex-1 py-3 rounded-xl font-bold bg-wine-600 text-white hover:bg-wine-700 transition-colors shadow-lg">
+                                    {t.save}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
         function App() {
             const [prompt, setPrompt] = useState('');
@@ -511,6 +584,10 @@
             const [error, setError] = useState(null);
             const [warningMsg, setWarningMsg] = useState(null); 
             
+            // Settings & Toast State
+            const [showSettings, setShowSettings] = useState(false);
+            const [toast, setToast] = useState(null); // { message, type }
+
             // Debug Prompts State
             const [debugPrompts, setDebugPrompts] = useState(null); // { image: '', text: '' }
 
@@ -529,6 +606,19 @@
                 accent: 'text-wine-600',
                 accentBg: 'bg-wine-800',
                 inputBg: darkMode ? 'bg-stone-900 border-stone-700 text-white' : 'bg-[#fffbfc] border-wine-50 text-wine-900',
+            };
+
+            const getApiKey = () => localStorage.getItem('vinosocial_api_key');
+
+            const handleSaveSettings = (key) => {
+                if (key && key.trim().length > 0) {
+                    localStorage.setItem('vinosocial_api_key', key.trim());
+                    setToast({ message: t.keySaved, type: 'success' });
+                } else {
+                    localStorage.removeItem('vinosocial_api_key');
+                    setToast({ message: t.keyRemoved, type: 'success' });
+                }
+                setShowSettings(false);
             };
 
             const getPrompt = (list, id) => {
@@ -594,7 +684,7 @@
                 if (!text) return;
                 try {
                     await navigator.clipboard.writeText(text);
-                    alert(lang === 'it' ? "Copiato!" : "Copied!");
+                    setToast({ message: lang === 'it' ? "Copiato!" : "Copied!", type: 'success' });
                 } catch (err) {
                     try {
                         const textArea = document.createElement("textarea");
@@ -604,11 +694,10 @@
                         textArea.focus(); textArea.select(); 
                         const successful = document.execCommand('copy');
                         document.body.removeChild(textArea);
-                        if (successful) alert(lang === 'it' ? "Testo copiato!" : "Text copied!");
+                        if (successful) setToast({ message: lang === 'it' ? "Copiato!" : "Copied!", type: 'success' });
                         else throw new Error("Copy failed");
                     } catch (err) { 
-                        console.error(err);
-                        alert(lang === 'it' ? "Errore copia manuale" : "Manual copy error"); 
+                        setToast({ message: lang === 'it' ? "Errore copia" : "Copy error", type: 'error' });
                     }
                 }
             };
@@ -678,14 +767,12 @@
                         await navigator.share(shareData);
                     } catch (error) {
                         console.error('Error sharing:', error);
-                        // Fallback alert if share fails but copy succeeded
                         if (error.name !== 'AbortError') {
-                            alert(lang === 'it' ? "Prompt copiato negli appunti!" : "Prompt copied to clipboard!");
+                            setToast({ message: lang === 'it' ? "Prompt copiato!" : "Prompt copied!", type: 'success' });
                         }
                     }
                 } else {
-                    // Fallback for desktop without share API
-                    alert(lang === 'it' ? "Prompt copiato negli appunti! (Condivisione non supportata)" : "Prompt copied to clipboard! (Share not supported)");
+                    setToast({ message: lang === 'it' ? "Prompt copiato!" : "Prompt copied!", type: 'success' });
                 }
             };
             
@@ -841,6 +928,11 @@
             };
 
             const fetchCopyAndMeme = async (topic, ctxId, medId, ctxDetails) => {
+                const currentApiKey = getApiKey();
+                // We let generateContent handle the alert for missing key, 
+                // but this function needs it for fetch.
+                if (!currentApiKey) return { copy: "API Key missing", memeText: "Error" };
+
                 let tone = "";
                 if (techLevel > 70) tone += " Technical/Specific."; else tone += " Simple/Accessible.";
                 
@@ -898,7 +990,7 @@
 
                 try {
                     const data = await fetchWithBackoff(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`,
                         {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt }] }] })
@@ -914,7 +1006,6 @@
                             catch(e) { return { copy: "#viral", memeText: "Top Product", isBundle: false }; }
                         } else { return { copy: "#viral", memeText: "Top Product", isBundle: false }; }
                     } else {
-                        // Bundle Parsing
                          const jsonMatch = textResult.match(/\{[\s\S]*\}/);
                          if (jsonMatch) {
                             try {
@@ -930,6 +1021,11 @@
             };
             
             const handleRegenerateText = async () => {
+                const currentApiKey = getApiKey();
+                if (!currentApiKey) {
+                    setShowSettings(true);
+                    return;
+                }
                 if (!prompt.trim()) return;
                 setTextLoading(true);
                 try {
@@ -950,6 +1046,9 @@
             };
 
             async function analyzeImageForPrompt(base64Data, mimeType, type) {
+                const currentApiKey = getApiKey();
+                if (!currentApiKey) return null;
+
                 let instruction = "";
                 if (type === 'product') instruction = "Describe this product's shape, material, and color visually in 30 English words. Start with 'A product shaped like...'.";
                 else if (type === 'logo') instruction = "Describe this logo/label visually (colors, text, style) in 20 English words.";
@@ -957,7 +1056,7 @@
 
                 try {
                     const response = await fetchWithBackoff(
-                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${currentApiKey}`,
                         {
                             method: 'POST', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ contents: [{ parts: [{ text: instruction }, { inlineData: { mimeType: mimeType || 'image/png', data: base64Data } }] }] })
@@ -968,8 +1067,11 @@
             }
 
             async function callImagen(modelName, prompt, count) {
+                 const currentApiKey = getApiKey();
+                 if (!currentApiKey) return null;
+
                  const response = await fetchWithBackoff(
-                    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${apiKey}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${currentApiKey}`,
                     {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ instances: [{ prompt: prompt }], parameters: { sampleCount: count, aspectRatio: "1:1" } })
@@ -980,6 +1082,10 @@
             }
 
             const fetchImage = async (userPrompt, ctxId, medId, pImg, pType, lImg, lType, persImg, persType, details, ctxDetails, count) => {
+                const currentApiKey = getApiKey();
+                // Main generateContent handles validation, this just needs key
+                if (!currentApiKey) throw new Error("API Key missing");
+
                 const contextPrompt = getPrompt(contextsList, ctxId);
                 const mediumPrompt = getPrompt(mediumsList, medId);
                 
@@ -1018,7 +1124,7 @@
                         }
 
                         const data = await fetchWithBackoff(
-                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`,
                             {
                                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { responseModalities: ['IMAGE'] }, safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }] })
@@ -1056,8 +1162,10 @@
             };
 
             const generateContent = async () => {
-                if (!apiKey) {
-                    alert(t.apiKeyMissing);
+                const currentApiKey = getApiKey();
+                if (!currentApiKey) {
+                    setShowSettings(true);
+                    setToast({ message: t.apiKeyMissing, type: 'error' });
                     return;
                 }
                 if (!prompt.trim()) return;
@@ -1109,13 +1217,18 @@
             return (
                 <div className={`min-h-screen font-serif transition-colors duration-300 ${theme.bg} ${theme.text}`}>
                     <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+                    
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+                    <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} t={t} onSave={handleSaveSettings} />
+
                     <header className={`${darkMode ? 'bg-stone-900 border-stone-800' : 'bg-white border-wine-100'} border-b sticky top-0 z-20 shadow-sm transition-colors duration-300`}>
                         <div className="max-w-4xl mx-auto px-4 h-20 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="bg-wine-900 p-2.5 rounded-full shadow-md text-white"><Icons.Briefcase className="w-6 h-6" /></div>
-                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v31.1 (API Guard)</p></div>
+                                <div><h1 className="text-2xl font-bold tracking-tight text-wine-900 dark:text-wine-500 serif">{t.title}<span className="text-wine-400 font-light">AI</span></h1><p className="text-xs text-stone-500 font-sans tracking-widest uppercase">v32.0 (Key Manager)</p></div>
                             </div>
                             <div className="flex items-center gap-3">
+                                <button onClick={() => setShowSettings(true)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Settings className="w-5 h-5" /></button>
                                 <button onClick={() => setLang(lang === 'it' ? 'en' : 'it')} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${darkMode ? 'bg-stone-800 hover:bg-stone-700 text-stone-300' : 'bg-wine-50 hover:bg-wine-100 text-wine-900'}`}><Icons.Globe className="w-3.5 h-3.5" /> {lang === 'it' ? 'IT' : 'EN'}</button>
                                 <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full transition-colors ${darkMode ? 'bg-stone-800 text-yellow-400 hover:bg-stone-700' : 'bg-wine-50 text-wine-900 hover:bg-wine-100'}`}>{darkMode ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}</button>
                             </div>
