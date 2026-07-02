@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI - Stable Debug v33.3</title>
+    <title>SocialStudio AI </title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -385,6 +385,8 @@
                 copyBtn: "Copia",
                 shareBtn: "Condividi",
                 manualShareBtn: "Condividi Input (No API)",
+                manualShareVideoBtn: "Condividi Input Video (No API)",
+                manualShareTextBtn: "Condividi Prompt Testo (No API)",
                 genPromptsBtn: "Genera Prompt (Debug/Manual)",
                 memeToneLabel: "Tono Meme",
                 memeSarcastic: "Ironico / Sarcastico",
@@ -409,6 +411,7 @@
                 singleGen: "Singola (Veloce)",
                 batchGen: "Batch (4 Varianti)",
                 promptImgLabel: "Universal Image Generation Prompt (Fidelity Mode):",
+                promptVidLabel: "Universal Video Generation Prompt (Gemini Omni / Kling AI):",
                 promptTxtLabel: "Istruzioni Generazione Testo:"
             },
             en: {
@@ -438,6 +441,8 @@
                 copyBtn: "Copy",
                 shareBtn: "Share",
                 manualShareBtn: "Share Inputs (No API)",
+                manualShareVideoBtn: "Share Video Inputs (No API)",
+                manualShareTextBtn: "Share Text Prompt (No API)",
                 genPromptsBtn: "Generate Prompts (Debug/Manual)",
                 memeToneLabel: "Meme Tone",
                 memeSarcastic: "Sarcastic / Ironic",
@@ -462,6 +467,7 @@
                 singleGen: "Single (Fast)",
                 batchGen: "Batch (4 Variants)",
                 promptImgLabel: "Universal Image Generation Prompt (Fidelity Mode):",
+                promptVidLabel: "Universal Video Generation Prompt (Gemini Omni / Kling AI):",
                 promptTxtLabel: "Text Generation Instructions:"
             }
         };
@@ -583,7 +589,7 @@
             const [toast, setToast] = useState(null); // { message, type }
 
             // Debug Prompts State
-            const [debugPrompts, setDebugPrompts] = useState(null); // { image: '', text: '' }
+            const [debugPrompts, setDebugPrompts] = useState(null); // { image: '', video: '', text: '' }
 
             const productInputRef = useRef(null);
             const logoInputRef = useRef(null);
@@ -705,8 +711,22 @@
                 return new Blob([ab], { type: mimeString });
             };
             
+            // --- AUTO MOTION STYLE SELECTOR (VIDEO) ---
+            const getMotionStyle = (isStudio, isRealism, platformVal) => {
+                if (platformVal === 'meme') {
+                    return "Fast-paced, energetic snap zoom-in on the product, quick jump-cut style, punchy meme pacing, short loopable motion.";
+                }
+                if (isStudio) {
+                    return "Slow, smooth 360-degree orbit around the product on a seamless turntable, subtle parallax, stable ambient studio light, no camera shake, product perfectly centered at all times.";
+                }
+                if (isRealism) {
+                    return "Cinematic handheld dolly-in with natural subtle parallax, realistic ambient motion (steam, fabric, hair, liquid, light flares) within the scene, documentary-style camera work.";
+                }
+                return "Slow atmospheric push-in with painterly ambient motion (drifting light, particles, smoke), continuous dreamlike movement rendered in the chosen artistic medium.";
+            };
+
             // --- UPDATED MANUAL SHARE (HYBRID: GENERIC FORMAT + SPECIFIC ROLES) ---
-            const handleManualShare = async () => {
+            const buildSharePrompt = (mode) => {
                 // 1. Construct Base Prompt
                 const contextPrompt = getPrompt(contextsList, contextStyle);
                 const mediumPrompt = getPrompt(mediumsList, mediumStyle);
@@ -714,20 +734,41 @@
                 if (subject.length > 50) subject = "the product described";
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
-                // 2. Build the Model-Agnostic Prompt Structure (Universal Format)
-                let fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
-                fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
-                fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
-                fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
-                fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
-                
-                fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
-                fullPrompt += `- The product must be PHYSICALLY GROUNDED in the scene. NO floating overlays.\n`;
-                fullPrompt += `- Match lighting, shadows, and reflections of the environment perfectly.\n`;
-                fullPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images.\n\n`;
-
+                let fullPrompt = "";
                 const filesToShare = [];
                 let referenceCount = 1;
+
+                if (mode === 'video') {
+                    const contextGroupM = contextsList.find(g => g.options?.some(o => o.id === contextStyle))?.group || "";
+                    const mediumGroupM = mediumsList.find(g => g.options?.some(o => o.id === mediumStyle))?.group || "";
+                    const isStudioM = contextGroupM.includes('Studio');
+                    const isRealismM = mediumGroupM.includes('Photography') || mediumGroupM.includes('Editorial');
+                    const motionPrompt = getMotionStyle(isStudioM, isRealismM, platform);
+
+                    fullPrompt = `** UNIVERSAL VIDEO GENERATION PROMPT **\n\n`;
+                    fullPrompt += `[TASK]: Generate a short high-fidelity video of ${subject}.\n`;
+                    fullPrompt += `[SCENE]: ${dynamicContext}\n`;
+                    fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                    fullPrompt += `[CAMERA & MOTION]: ${motionPrompt}\n`;
+                    fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
+
+                    fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
+                    fullPrompt += `- The product must be PHYSICALLY GROUNDED in the scene across every frame. NO floating overlays.\n`;
+                    fullPrompt += `- Maintain consistent lighting, shadows, and reflections throughout the motion.\n`;
+                    fullPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images across all frames.\n`;
+                    fullPrompt += `- Keep motion smooth and physically plausible, no warping or morphing artifacts.\n\n`;
+                } else {
+                    fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
+                    fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
+                    fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
+                    fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                    fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
+
+                    fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
+                    fullPrompt += `- The product must be PHYSICALLY GROUNDED in the scene. NO floating overlays.\n`;
+                    fullPrompt += `- Match lighting, shadows, and reflections of the environment perfectly.\n`;
+                    fullPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images.\n\n`;
+                }
 
                 if (productImg) {
                     filesToShare.push(new File([dataURItoBlob(productImg)], "ref_1_product.jpg", { type: productMimeType || 'image/jpeg' }));
@@ -745,13 +786,16 @@
                     referenceCount++;
                 }
 
-                // 3. Copy & Share Logic
+                return { fullPrompt, filesToShare };
+            };
+
+            const shareOrCopyPrompt = async (fullPrompt, filesToShare, shareTitle) => {
                 await copyToClipboard(fullPrompt);
 
                 if (navigator.share) {
                     try {
                         const shareData = {
-                            title: 'SocialStudio Prompt',
+                            title: shareTitle,
                             text: fullPrompt
                         };
                         if (filesToShare.length > 0 && navigator.canShare && navigator.canShare({ files: filesToShare })) {
@@ -767,7 +811,81 @@
                     setToast({ message: lang === 'it' ? "Prompt copiato!" : "Prompt copied!", type: 'success' });
                 }
             };
-            
+
+const buildTextPrompt = () => {
+                const getSafeLabel = (list, id) => {
+                    try {
+                        for (const g of list) {
+                            const opt = g.options?.find(o => o.id === id);
+                            if (opt) return opt.label;
+                        }
+                    } catch(e) {}
+                    return "Standard";
+                };
+
+                const checkGroupKeywords = (list, id, keyword) => {
+                    try {
+                        for (const g of list) {
+                            if (g.options?.some(o => o.id === id)) {
+                                return g.group?.includes(keyword) || false;
+                            }
+                        }
+                    } catch(e) {}
+                    return false;
+                };
+
+                const contextLabel = getSafeLabel(contextsList, contextStyle);
+                const mediumLabel = getSafeLabel(mediumsList, mediumStyle);
+
+                const isStudio = checkGroupKeywords(contextsList, contextStyle, 'Studio');
+                const isRealism = checkGroupKeywords(mediumsList, mediumStyle, 'Photography') || checkGroupKeywords(mediumsList, mediumStyle, 'Editorial');
+
+                let systemPrompt = "";
+                let tone = techLevel > 70 ? "Technical/Specific." : "Simple/Accessible.";
+
+                if (platform === 'meme') {
+                    const memeStyle = memeType === 'sarcastic' ? "SARCASTIC, IRONIC, RELATABLE (Viral Humor)" : "PROMOTIONAL, MARKETING, SALES (Call to Action)";
+                    systemPrompt = `You are a MEME creator. Style: ${memeStyle}. Topic: "${prompt}". Context: "${contextDetails}". Response JSON: { "meme_phrase": "TEXT", "hashtags": "#tag" }. NO MARKDOWN.`;
+                } else {
+                    const langInstruction = lang === 'en' ? 'Write in English.' : 'Scrivi in Italiano.';
+                    let creativeInstruction = "";
+
+                    if (isRealism) {
+                        if (isStudio) {
+                            creativeInstruction = `Focus purely on the product '${prompt}' features. Write high-conversion marketing copy.`;
+                        } else {
+                            creativeInstruction = `Focus on the product '${prompt}' and the lifestyle setting (${contextLabel}). Incorporate details: ${contextDetails}.`;
+                        }
+                    } else {
+                        creativeInstruction = `Merge the concept of '${prompt}' and the ${mediumLabel} art style.`;
+                    }
+
+                    systemPrompt = `You are an expert Social Media Manager. Generate a marketing bundle for the product: "${prompt}".
+                    ${creativeInstruction}
+                    Tone: ${tone}.
+                    Return a JSON object with exactly these keys:
+                    { "instagram": "...", "linkedin": "...", "story": "..." }
+                    ${langInstruction} DO NOT USE MARKDOWN BLOCK. JUST RAW JSON.`;
+                }
+
+                return { fullPrompt: systemPrompt, filesToShare: [] };
+            };
+
+                        const handleManualShare = async () => {
+                const { fullPrompt, filesToShare } = buildSharePrompt('image');
+                await shareOrCopyPrompt(fullPrompt, filesToShare, 'SocialStudio Image Prompt');
+            };
+
+            const handleManualShareVideo = async () => {
+                const { fullPrompt, filesToShare } = buildSharePrompt('video');
+                await shareOrCopyPrompt(fullPrompt, filesToShare, 'SocialStudio Video Prompt');
+            };
+
+            const handleManualShareText = async () => {
+                const { fullPrompt, filesToShare } = buildTextPrompt();
+                await shareOrCopyPrompt(fullPrompt, filesToShare, 'SocialStudio Text Prompt');
+            };
+
             // --- UPDATED DEBUG PROMPTS (FIXED: SAFE DATA ACCESS) ---
             const handleShowPrompts = () => {
                 try {
@@ -873,8 +991,39 @@
                         refCount++;
                     }
 
+                    // --- 4. BUILD VIDEO PROMPT (auto-selected motion, no extra inputs) ---
+                    const motionPrompt = getMotionStyle(isStudio, isRealism, platform);
+
+                    let videoPrompt = `** UNIVERSAL VIDEO GENERATION PROMPT **\n\n`;
+                    videoPrompt += `[TASK]: Generate a short high-fidelity video of ${subject}.\n`;
+                    videoPrompt += `[SCENE]: ${dynamicContext}\n`;
+                    videoPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                    videoPrompt += `[CAMERA & MOTION]: ${motionPrompt}\n`;
+                    videoPrompt += `[DETAILS]: ${contextDetails}\n\n`;
+
+                    videoPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
+                    videoPrompt += `- The product must be PHYSICALLY GROUNDED in the scene across every frame. NO floating overlays.\n`;
+                    videoPrompt += `- Maintain consistent lighting, shadows, and reflections throughout the motion.\n`;
+                    videoPrompt += `- HIGH FIDELITY: Preserve exact shape, text, and details of reference images across all frames.\n`;
+                    videoPrompt += `- Keep motion smooth and physically plausible, no warping or morphing artifacts.\n\n`;
+
+                    let refCountV = 1;
+                    if (productImg) {
+                        videoPrompt += `[REFERENCE ${refCountV} - STRUCTURE]: Use this image as the SOURCE OF TRUTH for the product's shape.\n`;
+                        refCountV++;
+                    }
+                    if (logoImg) {
+                        videoPrompt += `[REFERENCE ${refCountV} - LABEL]: Apply this label onto the product. MUST BE LEGIBLE.\n`;
+                        refCountV++;
+                    }
+                    if (personImg) {
+                        videoPrompt += `[REFERENCE ${refCountV} - ACTOR]: Include this person interacting organically.\n`;
+                        refCountV++;
+                    }
+
                     setDebugPrompts({
                         image: fullPrompt,
+                        video: videoPrompt,
                         text: systemPrompt
                     });
 
@@ -1348,6 +1497,14 @@
                                         <Icons.Send className="w-4 h-4" /> {t.manualShareBtn}
                                     </button>
 
+                                    <button onClick={handleManualShareVideo} className={`w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-medium text-sm transition-all hover:bg-opacity-80 border ${darkMode ? 'border-stone-700 text-stone-400 hover:bg-stone-800' : 'border-stone-300 text-stone-600 hover:bg-stone-100'}`}>
+                                        <Icons.Send className="w-4 h-4" /> {t.manualShareVideoBtn}
+                                    </button>
+
+                                    <button onClick={handleManualShareText} className={`w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-medium text-sm transition-all hover:bg-opacity-80 border ${darkMode ? 'border-stone-700 text-stone-400 hover:bg-stone-800' : 'border-stone-300 text-stone-600 hover:bg-stone-100'}`}>
+                                        <Icons.Send className="w-4 h-4" /> {t.manualShareTextBtn}
+                                    </button>
+
                                     <button onClick={handleShowPrompts} className={`w-full py-3 px-6 rounded-xl flex items-center justify-center gap-2 font-sans font-medium text-sm transition-all hover:bg-opacity-80 border border-dashed ${darkMode ? 'border-stone-600 text-stone-500 hover:border-stone-400 hover:text-stone-300' : 'border-stone-400 text-stone-500 hover:border-stone-600 hover:text-stone-700'}`}>
                                         <Icons.Code className="w-4 h-4" /> {t.genPromptsBtn}
                                     </button>
@@ -1361,6 +1518,13 @@
                                                 <button onClick={() => copyToClipboard(debugPrompts.image)} className="text-[10px] underline hover:text-wine-500">{t.copyBtn}</button>
                                             </div>
                                             <textarea readOnly rows={6} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.image} />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <label className={`text-[10px] font-bold uppercase tracking-wider ${theme.subtext}`}>{t.promptVidLabel}</label>
+                                                <button onClick={() => copyToClipboard(debugPrompts.video)} className="text-[10px] underline hover:text-wine-500">{t.copyBtn}</button>
+                                            </div>
+                                            <textarea readOnly rows={6} className={`w-full p-2 text-xs font-mono rounded border bg-transparent ${darkMode ? 'border-stone-800 text-stone-400' : 'border-stone-300 text-stone-600'}`} value={debugPrompts.video} />
                                         </div>
                                         <div className="space-y-1">
                                             <div className="flex justify-between items-center">
