@@ -758,6 +758,7 @@
                     fullPrompt += `[SCENE]: ${dynamicContext}\n`;
                     fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
                     fullPrompt += `[CAMERA & MOTION]: ${motionPrompt}\n`;
+                    fullPrompt += `[ASPECT RATIO]: Strict vertical 9:16 (Instagram Reels/Story format), full-bleed vertical composition throughout, no letterboxing or pillarboxing.\n`;
                     fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
 
                     fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
@@ -777,6 +778,7 @@
                     if (prompt.trim()) fullPrompt += `[PRODUCT/CAMPAIGN TOPIC]: ${prompt.trim()}\n`;
                     fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
                     fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                    fullPrompt += `[ASPECT RATIO]: Strict vertical 9:16 (Instagram Reels/Story format), full-bleed vertical composition, no letterboxing or pillarboxing.\n`;
                     fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
 
                     fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
@@ -985,6 +987,7 @@ const buildTextPrompt = () => {
                     fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
                     fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
                     fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
+                    fullPrompt += `[ASPECT RATIO]: Strict vertical 9:16 (Instagram Reels/Story format), full-bleed vertical composition, no letterboxing or pillarboxing.\n`;
                     fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
                     
                     fullPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
@@ -1014,6 +1017,7 @@ const buildTextPrompt = () => {
                     videoPrompt += `[SCENE]: ${dynamicContext}\n`;
                     videoPrompt += `[STYLE]: ${mediumPrompt}\n`;
                     videoPrompt += `[CAMERA & MOTION]: ${motionPrompt}\n`;
+                    videoPrompt += `[ASPECT RATIO]: Strict vertical 9:16 (Instagram Reels/Story format), full-bleed vertical composition throughout, no letterboxing or pillarboxing.\n`;
                     videoPrompt += `[DETAILS]: ${contextDetails}\n\n`;
 
                     videoPrompt += `** CRITICAL: ORGANIC EMBEDDING & FIDELITY **\n`;
@@ -1061,24 +1065,24 @@ const buildTextPrompt = () => {
                         const img = new Image();
                         img.crossOrigin = "anonymous";
                         img.onload = () => {
-                            const size = 1024;
-                            canvas.width = size; canvas.height = size;
-                            const scale = Math.max(size / img.width, size / img.height);
-                            const x = (size / 2) - (img.width / 2) * scale;
-                            const y = (size / 2) - (img.height / 2) * scale;
+                            const canvasW = 1080; const canvasH = 1920;
+                            canvas.width = canvasW; canvas.height = canvasH;
+                            const scale = Math.max(canvasW / img.width, canvasH / img.height);
+                            const x = (canvasW / 2) - (img.width / 2) * scale;
+                            const y = (canvasH / 2) - (img.height / 2) * scale;
                             ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                            const gradient = ctx.createLinearGradient(0, size - 400, 0, size);
+                            const gradient = ctx.createLinearGradient(0, canvasH - 600, 0, canvasH);
                             gradient.addColorStop(0, "rgba(0,0,0,0)");
                             gradient.addColorStop(0.5, "rgba(0,0,0,0.3)");
                             gradient.addColorStop(1, "rgba(0,0,0,0.8)");
-                            ctx.fillStyle = gradient; ctx.fillRect(0, size - 400, size, 400);
-                            const fontSize = 56;
+                            ctx.fillStyle = gradient; ctx.fillRect(0, canvasH - 600, canvasW, 600);
+                            const fontSize = 64;
                             ctx.font = `900 ${fontSize}px "Oswald", "Impact", sans-serif`;
                             ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
                             ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000000';
                             ctx.lineWidth = 6; ctx.shadowColor = "rgba(0,0,0,0.8)"; ctx.shadowBlur = 4; ctx.lineJoin = 'round';
                             const text = memeText.toUpperCase();
-                            const maxWidth = size - 80;
+                            const maxWidth = canvasW - 100;
                             const words = text.split(' ');
                             let lines = []; let currentLine = words[0];
                             for (let i = 1; i < words.length; i++) {
@@ -1088,12 +1092,12 @@ const buildTextPrompt = () => {
                             }
                             lines.push(currentLine);
                             const lineHeight = fontSize * 1.2;
-                            const bottomPadding = 40;
-                            let startY = size - bottomPadding - ((lines.length - 1) * lineHeight);
+                            const bottomPadding = 60;
+                            let startY = canvasH - bottomPadding - ((lines.length - 1) * lineHeight);
                             lines.forEach((line, index) => {
                                  const lineY = startY + (index * lineHeight);
-                                 ctx.strokeText(line, size / 2, lineY);
-                                 ctx.fillText(line, size / 2, lineY);
+                                 ctx.strokeText(line, canvasW / 2, lineY);
+                                 ctx.fillText(line, canvasW / 2, lineY);
                             });
                             setFinalMemeImage(canvas.toDataURL('image/png'));
                         };
@@ -1260,7 +1264,7 @@ const buildTextPrompt = () => {
                     `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:predict?key=${currentApiKey}`,
                     {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ instances: [{ prompt: prompt }], parameters: { sampleCount: count, aspectRatio: "1:1" } })
+                        body: JSON.stringify({ instances: [{ prompt: prompt }], parameters: { sampleCount: count, aspectRatio: "9:16" } })
                     }
                 );
                 if (response && response.predictions && response.predictions[0]) return `data:image/png;base64,${response.predictions[0].bytesBase64Encoded}`;
@@ -1279,11 +1283,12 @@ const buildTextPrompt = () => {
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
 
                 let fullPrompt = "";
-                if (platform === 'meme') fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. COMPOSITION: Center weighted.`;
+                if (platform === 'meme') fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. COMPOSITION: Center weighted, vertical 9:16 framing.`;
                 else fullPrompt = `MAIN SUBJECT: ${subject}. CONTEXT: ${dynamicContext}. DETAILS: ${ctxDetails}. STYLE: ${mediumPrompt}. QUALITY: 8k.`;
-                
+
                 // Add organic keyword to internal generation
                 fullPrompt += " REQUIREMENT: The product must be ORGANICALLY EMBEDDED into the scene. Match lighting and shadows. No floating.";
+                fullPrompt += " ASPECT RATIO: Strict vertical 9:16 (Instagram Reels/Story format). Full-bleed vertical composition, no letterboxing, no pillarboxing.";
 
                 const requests = Array(count).fill(null).map(async () => {
                     try {
@@ -1312,7 +1317,7 @@ const buildTextPrompt = () => {
                             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${currentApiKey}`,
                             {
                                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { responseModalities: ['IMAGE'] }, safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }] })
+                                body: JSON.stringify({ contents: [{ parts: parts }], generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: "9:16" } }, safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }] })
                             }
                         );
                         const img = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
