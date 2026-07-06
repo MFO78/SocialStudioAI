@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SocialStudio AI </title>
+    <title>SocialStudio AI - Stable Debug v33.3</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -733,6 +733,7 @@
                 let subject = customDetails.trim() || prompt.trim() || "product";
                 if (subject.length > 50) subject = "the product described";
                 const dynamicContext = contextPrompt.replace(/{{SUBJECT}}/g, subject);
+                const isMeme = platform === 'meme';
 
                 let fullPrompt = "";
                 const filesToShare = [];
@@ -746,7 +747,14 @@
                     const motionPrompt = getMotionStyle(isStudioM, isRealismM, platform);
 
                     fullPrompt = `** UNIVERSAL VIDEO GENERATION PROMPT **\n\n`;
-                    fullPrompt += `[TASK]: Generate a short high-fidelity video of ${subject}.\n`;
+                    if (isMeme) {
+                        fullPrompt += `[FORMAT]: MEME VIDEO (short, punchy, loopable).\n`;
+                        fullPrompt += `[TASK]: Generate a short high-fidelity meme-style video of ${subject}.\n`;
+                        fullPrompt += `[TONE]: ${memeType === 'sarcastic' ? 'SARCASTIC, IRONIC, RELATABLE (Viral Humor)' : 'PROMOTIONAL, MARKETING, SALES (Call to Action)'}.\n`;
+                    } else {
+                        fullPrompt += `[TASK]: Generate a short high-fidelity video of ${subject}.\n`;
+                    }
+                    if (prompt.trim()) fullPrompt += `[PRODUCT/CAMPAIGN TOPIC]: ${prompt.trim()}\n`;
                     fullPrompt += `[SCENE]: ${dynamicContext}\n`;
                     fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
                     fullPrompt += `[CAMERA & MOTION]: ${motionPrompt}\n`;
@@ -759,7 +767,14 @@
                     fullPrompt += `- Keep motion smooth and physically plausible, no warping or morphing artifacts.\n\n`;
                 } else {
                     fullPrompt = `** UNIVERSAL IMAGE GENERATION PROMPT **\n\n`;
-                    fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
+                    if (isMeme) {
+                        fullPrompt += `[FORMAT]: MEME IMAGE (center-weighted composition, bold text overlay space).\n`;
+                        fullPrompt += `[TASK]: Generate a high-fidelity meme-style image of ${subject}.\n`;
+                        fullPrompt += `[TONE]: ${memeType === 'sarcastic' ? 'SARCASTIC, IRONIC, RELATABLE (Viral Humor)' : 'PROMOTIONAL, MARKETING, SALES (Call to Action)'}.\n`;
+                    } else {
+                        fullPrompt += `[TASK]: Generate a high-fidelity image of ${subject}.\n`;
+                    }
+                    if (prompt.trim()) fullPrompt += `[PRODUCT/CAMPAIGN TOPIC]: ${prompt.trim()}\n`;
                     fullPrompt += `[CONTEXT]: ${dynamicContext}\n`;
                     fullPrompt += `[STYLE]: ${mediumPrompt}\n`;
                     fullPrompt += `[DETAILS]: ${contextDetails}\n\n`;
